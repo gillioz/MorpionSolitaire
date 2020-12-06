@@ -1,7 +1,5 @@
 # MorpionSolitaire
-
-This is a Python implementation of the pen-and-paper game Morpion Solitaire (aka. Join Five, https://en.wikipedia.org/wiki/Join_Five).
-It performs random exploration of game outputs, and gives various statistics at any intermediate stage (number of legal moves, number of points that are not being used).
+This is a Python implementation of the pen-and-paper game Morpion Solitaire (aka. Join Five, https://en.wikipedia.org/wiki/Join_Five). It performs random exploration of game outputs, and gives various statistics at any intermediate stage (number of legal moves, number of points that are not being used).
 
 In addition to the original set of rules, several variants that are playable on http://joinfive.com/ have been implemented:
 - Cross 5T (original rules)
