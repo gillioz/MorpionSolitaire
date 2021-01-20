@@ -1,9 +1,7 @@
 
 import numpy as np
-from PIL import Image
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from PIL.DdsImagePlugin import DXGI_FORMAT_BC7_TYPELESS
 
 class Grid:
     '''
@@ -97,23 +95,6 @@ class Grid:
             fct(plt)
         plt.show()
     
-    def image(self):
-        '''
-        Generates a PIL image from the grid, used for deep learning
-        '''
-        n = 3*self.DIMENSION - 2
-        im = np.empty((n,n), dtype=bool)
-        im[0::3,0::3] = self.cell[:,:,0]
-        im[1::3,0::3] = self.cell[:-1,:,1]
-        im[2::3,0::3] = self.cell[:-1,:,1]
-        im[0::3,1::3] = self.cell[:,:-1,2]
-        im[0::3,2::3] = self.cell[:,:-1,2]
-        im[1::3,1::3] = self.cell[:-1,:-1,3]
-        im[2::3,2::3] = self.cell[:-1,:-1,3]
-        im[1::3,2::3] = self.cell[1:,:-1,4]
-        im[2::3,1::3] = self.cell[1:,:-1,4]
-        return Image.fromarray(im)
-
     def add_segment(self, move, seg_len = 4,
                     touching_rule = True, check_legal = True):
         '''
@@ -267,20 +248,58 @@ class Game:
         self.grid.print(size = size, color = color, marker = marker, markersize = markersize,
                         fct = pltfct)
     
-    def play(self, fct, depth = -1, check_legal = True):
+    def play(self, index = None, model = None, t = 0.0, depth = -1):
         '''
         Recursively defines a new instance of Game, adding one segment at a time,
         until there are no more legal moves or a given depth is attained.
-        The legal move is picked according to a function fct.
         
-        The method can be optionally sped up by omitting to check
-        whether a move is legal or not.
+        The argument index indicates which legal move to choose.
+        If index is None, then the move is chosen according to a model.
+        If model is None, then the move is taken at random.
+        
+        A model determines the index from a weighted distribution
+        with a probability that depends on the "temperature" t:
+        - when t is zero, the best move is chosen
+        - when t is non-zero, the probability of each move is given by
+          exp(w/t) where w is the weight
         '''
         if depth == 0 or len(self.moves) == 0:
             return self
-        index = fct(self)
-        newgame = PlayingGame(self, self.moves[index], check_legal)
-        return newgame.play(fct, depth = depth - 1, check_legal = check_legal)
+        if index is None:
+            if model is None:
+                i = np.random.randint(len(self.moves))
+            else:
+                weights = self.compute_weights(model)
+                if t > 0.0:
+                    weights = np.exp(weights / t)
+                    probs = weights/weights.sum()
+                    i = np.random.choice(range(len(weights)),
+                                         p = probs)
+                else:
+                    i = np.argmax(weights)
+        else:
+            i = index
+        newgame = PlayingGame(self, self.moves[i])
+        return newgame.play(index = index, depth = depth - 1)
+    
+    def compute_weights(self, model):
+        '''
+        Compute weights for each legal move by applying a model
+        to the grid corresponding to this move.
+        
+        The model takes as input an array of n times the grid's shape
+        and must returns another array of shape n
+        (n being the number of legal moves)
+        '''
+        grids = []
+        for move in self.moves:
+            self.grid.add_segment(move, seg_len = self.seg_len,
+                                  touching_rule = self.touching_rule,
+                                  check_legal = False)
+            grids.append(self.grid.cell)
+            self.grid.remove_segment(move, seg_len = self.seg_len)
+        return model(grids)
+    
 
 
 class StartingGame(Game):
@@ -311,7 +330,7 @@ class PlayingGame(Game):
     Child class of Game, automatically created when the method play is called
     '''
     
-    def __init__(self, game, move, check_legal = True):
+    def __init__(self, game, move):
         '''
         Constructor for the class PlayinGame, taking as argument
         a reference game and a move
@@ -320,7 +339,7 @@ class PlayingGame(Game):
                       seg_len = game.seg_len, touching_rule = game.touching_rule,
                       score = game.score + 1)
         self.parent = game
-        self.grid.add_segment(move, self.seg_len, check_legal = check_legal)
+        self.grid.add_segment(move, self.seg_len, check_legal = False)
         self.moves = [m for m in game.moves
                       if self.grid.is_legal(m, self.seg_len, touching_rule = self.touching_rule)]
         self.moves.extend(self.grid.compute_legal_moves_around(move[0:2], self.seg_len,

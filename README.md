@@ -6,7 +6,7 @@ It is a simple game, but with a very interesting dynamics. In its classical vers
 My goal is to develop a deep learning model to explore even more efficiently the possibilities of the game. At the moment, only random exploration is implemented, and the configurations reached in this way are typically far from optimal.
 
 The main library is MorpionSolitaire.py. The human-readable content is in the Jupyter notebooks:
-- `documentation.ipynb`: package documentation, with examples
+- `Documentation.ipynb`: package documentation, with examples
 - `Random_Exploration.ipynb`: notebook performing random exploration of the game outputs
 
 In addition to the original set of rules, several variants that are playable on [joinfive.com](http://joinfive.com/) have been (or will be) implemented too:
