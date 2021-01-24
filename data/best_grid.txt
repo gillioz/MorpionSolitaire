@@ -1,0 +1,1 @@
+# # pattern: cross | seg_len: 4 | touching_allowed:True

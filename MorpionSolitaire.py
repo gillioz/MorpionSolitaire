@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-class Grid:
+class Grid(np.ndarray):
     '''
-    Array of cells, each containing a point and 4 lines in the horizontal,
-    vertical, and both diagonal directions, following the conventions
+    A grid is an array of size 32 x 32, with 5 channels corresponding to
+    a point and 4 lines forming the unit cell, following the convention
      
       (4) (2) (3)
         \  |  /
@@ -16,7 +16,7 @@ class Grid:
           (0)
     '''
     
-    DIMENSION = 22
+    GRID_SIZE = 32
     
     STARTING_GRIDS = {
         'cross': np.array([[0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
@@ -50,44 +50,47 @@ class Grid:
     
     DIRECTIONS = ((0,0), (1, 0), (0, 1), (1,1), (-1,1))
     
+    def __new__(cls, *args):
+        return np.full((5, cls.GRID_SIZE, cls.GRID_SIZE), False).view(cls)
+    
     def __init__(self, pattern = ''):
         '''
         Constructor for the class Grid, returning either an empty grid
         or a pattern according to the dictionary STARTING_GRIDS
         '''
-        self.cell = np.full((self.DIMENSION, self.DIMENSION, 5), False)
         if pattern in self.STARTING_GRIDS.keys():
             w, h = self.STARTING_GRIDS[pattern].shape
-            x0 = (self.DIMENSION - w)//2
-            y0 = (self.DIMENSION - h)//2
-            self.cell[x0:x0+w,y0:y0+h,0] = self.STARTING_GRIDS[pattern].astype(bool)
-    
-    def copy(self):
-        '''
-        Deep copy of a grid, i.e. copy of its cells
-        '''
-        newgrid = Grid()
-        newgrid.cell = np.copy(self.cell)
-        return newgrid
+            x0 = (self.GRID_SIZE - w)//2
+            y0 = (self.GRID_SIZE - h)//2
+            self[0,x0:x0+w,y0:y0+h] = self.STARTING_GRIDS[pattern].astype(bool)
 	
-    def print(self, size = 6, fct = None,
+    def print(self, view = 20, figsize = 6, fct = None,
               color = 'k', marker = 'o', markersize = 4):
         '''
         Prints the Grid using matplotlib,
         and possibly add features with the function fct
+        
+        Note that by default the view is cropped to a grid of 20x20,
+        as most of the grids contain many empty cells along the boundary
         '''
-        fig = plt.figure(figsize=(size, size))
+        if view > self.GRID_SIZE:
+            view = self.GRID_SIZE
+        offset = (self.GRID_SIZE - view) // 2
+        viewwindow = (offset, offset + view - 1)
+        viewrange = range(offset, offset + view)
+        fig = plt.figure(figsize=(figsize, figsize))
         ax = fig.gca(aspect=1, autoscale_on = False,
-                     xticks=range(self.DIMENSION), xticklabels = '',
-                     yticks=range(self.DIMENSION), yticklabels = '')
+                     xlim = viewwindow, ylim = viewwindow,
+                     xticks=viewrange, xticklabels = '',
+                     yticks=viewrange, yticklabels = '')
         plt.grid()
-        for x in range(self.DIMENSION):
-            for y in range(self.DIMENSION):
-                if self.cell[x,y,0]:
+        for x in viewrange:
+            for y in viewrange:
+                if self[0, x, y]:
                     plt.plot(x, y, color = color,
                              marker = marker, markersize = markersize)
                 for dir in range(1, 5):
-                    if self.cell[x,y,dir]:
+                    if self[dir, x, y]:
                         plt.plot([x,x+self.DIRECTIONS[dir][0]],
                                  [y,y+self.DIRECTIONS[dir][1]],
                                  color = color)
@@ -105,16 +108,16 @@ class Grid:
          - n is the position of the point on the segment
          
         By default this function verifies first is the move
-        is a legal one, although this can be overriden.
+        is a legal one, although this step can be omitted.
         '''
         if check_legal:
             if self.is_legal(move, seg_len, touching_rule = touching_rule) == False:
                 raise Exception('Trying to add a segment {} of length {} at an illegal position'.format(move, seg_len))
         x, y, dir, n = move
         dx, dy = self.DIRECTIONS[dir]
-        self.cell[x, y, 0] = True
+        self[0, x, y] = True
         for i in range(seg_len):
-            self.cell[x+(i-n)*dx, y+(i-n)*dy, dir] = True
+            self[dir, x+(i-n)*dx, y+(i-n)*dy] = True
     
     def remove_segment(self, move, seg_len = 4):
         '''
@@ -122,9 +125,9 @@ class Grid:
         '''
         x, y, dir, n = move
         dx, dy = self.DIRECTIONS[dir]
-        self.cell[x, y, 0] = False
+        self[0, x, y] = False
         for i in range(seg_len):
-            self.cell[x+(i-n)*dx, y+(i-n)*dy, dir] = False
+            self[dir, x+(i-n)*dx, y+(i-n)*dy] = False
     
     def is_legal(self, move, seg_len = 4, touching_rule = True):
         '''
@@ -146,21 +149,22 @@ class Grid:
             x2 = x2 + dx
             y2 = y2 + dy
         # check that the segment is completely inside the grid
-        if (x1 < 0  or x1 >= self.DIMENSION
-            or x2 < 0 or x2 >= self.DIMENSION
-            or y1 < 0 or y1 >= self.DIMENSION
-            or y2 < 0 or y2 >= self.DIMENSION):
+        # including the empty parts to be checked at each end if touching_rule = False
+        if (x1 < 0  or x1 >= self.GRID_SIZE
+            or x2 < 0 or x2 >= self.GRID_SIZE
+            or y1 < 0 or y1 >= self.GRID_SIZE
+            or y2 < 0 or y2 >= self.GRID_SIZE):
             return False
         # check that the point is free
-        if self.cell[x, y, 0]:
+        if self[0, x, y]:
             return False
         # check that the other points are occupied
         for i in range(seg_len + 1):
-            if i != n and self.cell[x+(i-n)*dx, y+(i-n)*dy, 0] == False:
+            if i != n and self[0, x+(i-n)*dx, y+(i-n)*dy] == False:
                 return False
         # check that the lines are free
         for i in range(L):
-            if self.cell[x1 + i*dx, y1 + i*dy, dir]:
+            if self[dir, x1 + i*dx, y1 + i*dy]:
                 return False        
         return True
     
@@ -171,8 +175,8 @@ class Grid:
         should be use instead when possible
         '''
         moves = []
-        for x in range(self.DIMENSION):
-            for y in range(self.DIMENSION):
+        for x in range(self.GRID_SIZE):
+            for y in range(self.GRID_SIZE):
                 for dir in range(1,5):
                     for n in range(seg_len + 1):
                         if self.is_legal((x,y, dir, n), seg_len,
@@ -213,7 +217,7 @@ class Game:
     a list of legal moves, and a score.
     '''
     
-    def __init__(self, grid, seg_len = 4, touching_rule = True,
+    def __init__(self, grid = None, seg_len = 4, touching_rule = True,
                  moves = None, score = 0):
         '''
         The class Game is meant to be an abstract class:
@@ -227,7 +231,7 @@ class Game:
         self.score = score
     
     def print(self, show_legal_moves = False,
-              size = 6, color = 'k',
+              view = 20, figsize = 6, color = 'k',
               marker = 'o', markersize = 4,
               legal_moves_color = 'b'):
         '''
@@ -245,10 +249,13 @@ class Game:
                     plt.plot([x - n*dx, x + (self.seg_len - n)*dx],
                              [y - n*dy, y + (self.seg_len - n)*dy],
                              color = legal_moves_color)
-        self.grid.print(size = size, color = color, marker = marker, markersize = markersize,
+        self.grid.print(view = view, figsize = figsize,
+                        color = color, marker = marker,
+                        markersize = markersize,
                         fct = pltfct)
     
-    def play(self, index = None, model = None, t = 0.0, depth = -1):
+    def play(self, index = None, model = None, t = 0.0, depth = -1,
+             copy_grid = False):
         '''
         Recursively defines a new instance of Game, adding one segment at a time,
         until there are no more legal moves or a given depth is attained.
@@ -271,7 +278,13 @@ class Game:
             else:
                 weights = self.compute_weights(model)
                 if t > 0.0:
-                    weights = np.exp(weights / t)
+                    # the next 3 lines of code simply compute exp(weights/t)
+                    # but in a manner that is numerically safe 
+                    weights = weights/t
+                    # normalize the weights so that the maximum is 1 after exponentiating
+                    weights = weights - max(weights)
+                    # therefore we can set to zero any weight that is too small 
+                    weights = np.where(weights < -20.0, 0.0, np.exp(weights))
                     probs = weights/weights.sum()
                     i = np.random.choice(range(len(weights)),
                                          p = probs)
@@ -279,8 +292,12 @@ class Game:
                     i = np.argmax(weights)
         else:
             i = index
+        if copy_grid:
+            newgrid = self.grid.copy()
         newgame = PlayingGame(self, self.moves[i])
-        return newgame.play(index = index, depth = depth - 1)
+        if copy_grid:
+            self.grid = newgrid
+        return newgame.play(index = index, model = model, t = t, depth = depth - 1)
     
     def compute_weights(self, model):
         '''
@@ -296,8 +313,9 @@ class Game:
             self.grid.add_segment(move, seg_len = self.seg_len,
                                   touching_rule = self.touching_rule,
                                   check_legal = False)
-            grids.append(self.grid.cell)
+            grids.append(np.array(self.grid.copy()))
             self.grid.remove_segment(move, seg_len = self.seg_len)
+        grids = np.array(grids)
         return model(grids)
     
 
@@ -315,15 +333,33 @@ class StartingGame(Game):
         Game.__init__(self, Grid(pattern),
                       seg_len = seg_len, touching_rule = touching_rule,
                       score = 0)
+        self.pattern = pattern
         self.moves = self.grid.compute_legal_moves(seg_len)
 
-    def get_parent(self, depth):
+    def unplay(self, depth):
         '''
-        Returns the parent grid, which for a StartingGrid can only be itself
+        Returns the parent game, which for a StartingGrid is the game itself
         '''
         if depth > 0:
             raise Exception('No parent at this depth')
         return self
+    
+    def sequence(self):
+        '''
+        For a starting game, sequence returns a string that contains the game info
+        '''
+        string = '# pattern: {} | seg_len: {} | touching_allowed:{}'
+        return [string.format(self.pattern, self.seg_len, self.touching_rule)]
+    
+    def games_list(self, grid = None):
+        '''
+        Returns a list containing the current game, constructing the grid if necessary
+        '''
+        if grid is not None:
+            self.grid = grid
+        return [self]
+
+
 
 class PlayingGame(Game):
     '''
@@ -335,10 +371,11 @@ class PlayingGame(Game):
         Constructor for the class PlayinGame, taking as argument
         a reference game and a move
         '''
-        Game.__init__(self, game.grid.copy(),
+        Game.__init__(self, game.grid,
                       seg_len = game.seg_len, touching_rule = game.touching_rule,
                       score = game.score + 1)
         self.parent = game
+        self.last_move = move
         self.grid.add_segment(move, self.seg_len, check_legal = False)
         self.moves = [m for m in game.moves
                       if self.grid.is_legal(m, self.seg_len, touching_rule = self.touching_rule)]
@@ -346,11 +383,36 @@ class PlayingGame(Game):
                                                                touching_rule = self.touching_rule))
 
 
-    def get_parent(self, depth):
+    def unplay(self, depth):
         '''
-        Gives access to the parent game at a given depth
+        Undo the last steps and gives access to the parent game at a given depth
         '''
         if depth > 0:
-            return self.parent.get_parent(depth - 1)
+            self.grid.remove_segment(self.last_move, seg_len = self.seg_len)
+            # 'delete' the current game by emptying its score and moves
+            self.score = -1
+            self.moves = []
+            return self.parent.unplay(depth - 1)
         return self
-
+    
+    def sequence(self):
+        '''
+        Returns a list containing the score, number of legal moves, and last move 
+        for all the steps leading to the current game
+        '''
+        list = self.parent.sequence()
+        list.append([self.score, len(self.moves), self.last_move])
+        return list
+    
+    def games_list(self, grid = None):
+        '''
+        Returns a list of all the games corresponding to intermediate steps,
+        constructing the grid if necessary
+        '''
+        if grid is not None:
+            self.grid = grid
+        grid_copy = self.grid.copy()
+        grid_copy.remove_segment(self.last_move, seg_len = self.seg_len)    
+        list = self.parent.games_list(grid_copy)
+        list.append(self)
+        return list
