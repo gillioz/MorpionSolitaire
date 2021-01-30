@@ -53,18 +53,30 @@ class Grid(np.ndarray):
     def __new__(cls, *args):
         return np.full((5, cls.GRID_SIZE, cls.GRID_SIZE), False).view(cls)
     
-    def __init__(self, pattern = ''):
+    def __init__(self, pattern = '', n_points = 36, width = 10):
         '''
-        Constructor for the class Grid, returning either an empty grid
-        or a pattern according to the dictionary STARTING_GRIDS
+        Constructor for the class Grid, returning either an empty grid,
+        a pattern in the dictionary STARTING_GRIDS, or a random pattern
+        with a given number of points and a given width
         '''
         if pattern in self.STARTING_GRIDS.keys():
             w, h = self.STARTING_GRIDS[pattern].shape
             x0 = (self.GRID_SIZE - w)//2
             y0 = (self.GRID_SIZE - h)//2
             self[0,x0:x0+w,y0:y0+h] = self.STARTING_GRIDS[pattern].astype(bool)
+        if pattern == 'random':
+            if n_points > width * width:
+                raise Exception('There is no space to have {0} points in a {1}x{1} grid'.format(n_points, width))
+            x0 = (self.GRID_SIZE - width)//2
+            i = 0
+            while i < n_points:
+                x, y = x0 + np.random.randint(width, size = 2)
+                if self[0,x,y] == False:
+                    self[0,x,y] = True
+                    i = i + 1
+            
 	
-    def print(self, view = 20, figsize = 6, fct = None,
+    def print(self, view = 20, figsize = 6,
               color = 'k', marker = 'o', markersize = 4):
         '''
         Prints the Grid using matplotlib,
@@ -94,9 +106,6 @@ class Grid(np.ndarray):
                         plt.plot([x,x+self.DIRECTIONS[dir][0]],
                                  [y,y+self.DIRECTIONS[dir][1]],
                                  color = color)
-        if not(fct is None):
-            fct(plt)
-        plt.show()
     
     def add_segment(self, move, seg_len = 4,
                     touching_rule = True, check_legal = True):
@@ -220,39 +229,31 @@ class Game:
     def __init__(self, grid = None, seg_len = 4, touching_rule = True,
                  moves = None, score = 0):
         '''
-        The class Game is meant to be an abstract class:
-        one should not use this constructor directly but use instead
+        The class Game is an abstract class: one should not use this
+        constructor directly (it raises an exception) but use instead
         one of the child classes StartingGame or PlayingGame
         '''
-        self.grid = grid
-        self.seg_len = seg_len
-        self.touching_rule = touching_rule
-        self.moves = moves
-        self.score = score
+        raise Exception('The class "Game" is an abstract class: it cannot be instantiated.')
     
     def print(self, show_legal_moves = False,
-              view = 20, figsize = 6, color = 'k',
-              marker = 'o', markersize = 4,
-              legal_moves_color = 'b'):
+              legal_moves_color = 'b', legal_moves_marker = 'o',
+              legal_moves_markersize = 4, **kwargs):
         '''
         Displays the grid, together with the score and number of legal moves,
         and optionally all the legal moves
         '''
-        def pltfct(plt):
-            plt.title('Score : {}      # legal moves: {}'.format(self.score,len(self.moves)))
-            if show_legal_moves:
-                for move in self.moves:
-                    x, y, dir, n = move
-                    dx, dy = self.grid.DIRECTIONS[dir]
-                    plt.plot(x, y, color = legal_moves_color,
-                             marker = marker, markersize = markersize)
-                    plt.plot([x - n*dx, x + (self.seg_len - n)*dx],
-                             [y - n*dy, y + (self.seg_len - n)*dy],
-                             color = legal_moves_color)
-        self.grid.print(view = view, figsize = figsize,
-                        color = color, marker = marker,
-                        markersize = markersize,
-                        fct = pltfct)
+        self.grid.print(**kwargs)
+        plt.title('Score : {}      # legal moves: {}'.format(self.score,len(self.moves)))
+        if show_legal_moves:
+            for move in self.moves:
+                x, y, dir, n = move
+                dx, dy = self.grid.DIRECTIONS[dir]
+                plt.plot(x, y, color = legal_moves_color,
+                         marker = legal_moves_marker,
+                         markersize = legal_moves_markersize    )
+                plt.plot([x - n*dx, x + (self.seg_len - n)*dx],
+                         [y - n*dy, y + (self.seg_len - n)*dy],
+                         color = legal_moves_color)
     
     def play(self, index = None, model = None, t = 0.0, depth = -1,
              copy_grid = False):
@@ -281,13 +282,13 @@ class Game:
                     # the next 3 lines of code simply compute exp(weights/t)
                     # but in a manner that is numerically safe 
                     weights = weights/t
-                    # normalize the weights so that the maximum is 1 after exponentiating
+                    # normalize the weights so that the maximum is 0 after exponentiating
                     weights = weights - max(weights)
-                    # therefore we can set to zero any weight that is too small 
+                    # set to zero any weight that is too small 
                     weights = np.where(weights < -20.0, 0.0, np.exp(weights))
+                    # normalize
                     probs = weights/weights.sum()
-                    i = np.random.choice(range(len(weights)),
-                                         p = probs)
+                    i = np.random.choice(range(len(weights)), p = probs)
                 else:
                     i = np.argmax(weights)
         else:
@@ -325,16 +326,22 @@ class StartingGame(Game):
     Child class of Game, to be used to initialize a game
     '''
     
-    def __init__(self, pattern='cross', seg_len = 4, touching_rule = True):
+    def __init__(self, pattern='cross', seg_len = 4, touching_rule = True,
+                 iteration = 1000):
         '''
         Constructor for the class StartingGame, taking as arguments
         the initial pattern and the rules
         '''
-        Game.__init__(self, Grid(pattern),
-                      seg_len = seg_len, touching_rule = touching_rule,
-                      score = 0)
+        self.grid = Grid(pattern)
+        self.seg_len = seg_len
+        self.touching_rule = touching_rule
+        self.score = 0
         self.pattern = pattern
         self.moves = self.grid.compute_legal_moves(seg_len)
+        # in case the pattern is random, there is a chance that the game returns no legal moves:
+        # if this is the case, re-initialize the game (this is done at most a 1000 times)
+        if len(self.moves) == 0 and iteration > 0:
+            self.__init__(pattern, seg_len, touching_rule, iteration - 1)
 
     def unplay(self, depth):
         '''
@@ -371,9 +378,10 @@ class PlayingGame(Game):
         Constructor for the class PlayinGame, taking as argument
         a reference game and a move
         '''
-        Game.__init__(self, game.grid,
-                      seg_len = game.seg_len, touching_rule = game.touching_rule,
-                      score = game.score + 1)
+        self.grid = game.grid
+        self.seg_len = game.seg_len
+        self.touching_rule = game.touching_rule
+        self.score = game.score + 1
         self.parent = game
         self.last_move = move
         self.grid.add_segment(move, self.seg_len, check_legal = False)
@@ -390,8 +398,8 @@ class PlayingGame(Game):
         if depth > 0:
             self.grid.remove_segment(self.last_move, seg_len = self.seg_len)
             # 'delete' the current game by emptying its score and moves
-            self.score = -1
-            self.moves = []
+            # self.score = -1
+            # self.moves = []
             return self.parent.unplay(depth - 1)
         return self
     
