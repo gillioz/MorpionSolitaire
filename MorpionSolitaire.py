@@ -53,18 +53,19 @@ class Grid(np.ndarray):
     def __new__(cls, *args):
         return np.full((5, cls.GRID_SIZE, cls.GRID_SIZE), False).view(cls)
     
-    def __init__(self, pattern = '', n_points = 36, width = 10):
+    def __init__(self, pattern = '', n_points = 36, width = 10, db = ''):
         '''
-        Constructor for the class Grid, returning either an empty grid,
-        a pattern in the dictionary STARTING_GRIDS, or a random pattern
-        with a given number of points and a given width
+        Constructor for the class Grid, returning either
+         - an empty grid, or
+         - a pattern from the dictionary STARTING_GRIDS, or
+         - a random pattern with a given number of points and a given width
         '''
         if pattern in self.STARTING_GRIDS.keys():
             w, h = self.STARTING_GRIDS[pattern].shape
             x0 = (self.GRID_SIZE - w)//2
             y0 = (self.GRID_SIZE - h)//2
             self[0,x0:x0+w,y0:y0+h] = self.STARTING_GRIDS[pattern].astype(bool)
-        if pattern == 'random':
+        elif pattern == 'random':
             if n_points > width * width:
                 raise Exception('There is no space to have {0} points in a {1}x{1} grid'.format(n_points, width))
             x0 = (self.GRID_SIZE - width)//2
@@ -300,6 +301,29 @@ class Game:
             self.grid = newgrid
         return newgame.play(index = index, model = model, t = t, depth = depth - 1)
     
+    def explore_depth(self, depth):
+        '''
+        Performs a systematic exploration of the possible moves
+        and returns a number between zero and depth
+        corresponding to the maximal number of moves that is allowed.
+        
+        WARNING: This method is computationally intensive when called
+                 with a large depth.
+        '''
+        if depth == 0 or len(self.moves) == 0:
+            return 0
+        if depth == 1:
+            return 1
+        max_depth = 1
+        currentgrid = self.grid.copy()
+        for move in self.moves:
+            max_depth = max(max_depth, PlayingGame(self, move).explore_depth(depth - 1) + 1)
+            self.grid = currentgrid.copy()
+            if max_depth >= depth:
+                return depth
+        return max_depth
+        
+    
     def compute_weights(self, model):
         '''
         Compute weights for each legal move by applying a model
@@ -326,8 +350,24 @@ class StartingGame(Game):
     Child class of Game, to be used to initialize a game
     '''
     
+    STARTING_MOVES = {
+        'cross': [(10, 14, 1, 0), (10, 17, 1, 0), (11, 13, 2, 0), (11, 18, 2, 4),
+                  (13, 11, 1, 0), (13, 13, 4, 2), (13, 18, 3, 2), (13, 20, 1, 0),
+                  (14, 10, 2, 0), (14, 15, 2, 4), (14, 16, 2, 0), (14, 21, 2, 4),
+                  (15, 14, 1, 4), (15, 17, 1, 4), (16, 14, 1, 0), (16, 17, 1, 0),
+                  (17, 10, 2, 0), (17, 15, 2, 4), (17, 16, 2, 0), (17, 21, 2, 4),
+                  (18, 11, 1, 4), (18, 13, 3, 2), (18, 18, 4, 2), (18, 20, 1, 4),
+                  (20, 13, 2, 0), (20, 18, 2, 4), (21, 14, 1, 4), (21, 17, 1, 4)],
+        'pipe': [(10, 15, 4, 4), (10, 16, 3, 0), (11, 13, 2, 0), (11, 18, 2, 4),
+                 (13, 11, 1, 0), (13, 14, 1, 0), (13, 17, 1, 0), (13, 20, 1, 0),
+                 (14, 13, 2, 0), (14, 18, 2, 4), (15, 10, 4, 0), (15, 21, 3, 4),
+                 (16, 10, 3, 0), (16, 21, 4, 4), (17, 13, 2, 0), (17, 18, 2, 4),
+                 (18, 11, 1, 4), (18, 14, 1, 4), (18, 17, 1, 4), (18, 20, 1, 4),
+                 (20, 13, 2, 0), (20, 18, 2, 4), (21, 15, 3, 4), (21, 16, 4, 0)]
+    }
+    
     def __init__(self, pattern='cross', seg_len = 4, touching_rule = True,
-                 iteration = 1000):
+                 iteration = 100):
         '''
         Constructor for the class StartingGame, taking as arguments
         the initial pattern and the rules
@@ -337,9 +377,12 @@ class StartingGame(Game):
         self.touching_rule = touching_rule
         self.score = 0
         self.pattern = pattern
-        self.moves = self.grid.compute_legal_moves(seg_len)
+        if pattern in self.STARTING_MOVES.keys():
+            self.moves = self.STARTING_MOVES[pattern]
+        else:
+            self.moves = self.grid.compute_legal_moves(seg_len)
         # in case the pattern is random, there is a chance that the game returns no legal moves:
-        # if this is the case, re-initialize the game (this is done at most a 1000 times)
+        # if this is the case, re-initialize the game (this is done at most a 100 times)
         if len(self.moves) == 0 and iteration > 0:
             self.__init__(pattern, seg_len, touching_rule, iteration - 1)
 
@@ -358,12 +401,10 @@ class StartingGame(Game):
         string = '# pattern: {} | seg_len: {} | touching_allowed:{}'
         return [string.format(self.pattern, self.seg_len, self.touching_rule)]
     
-    def games_list(self, grid = None):
+    def games_list(self):
         '''
-        Returns a list containing the current game, constructing the grid if necessary
+        Returns a list containing the current game
         '''
-        if grid is not None:
-            self.grid = grid
         return [self]
 
 
@@ -379,6 +420,7 @@ class PlayingGame(Game):
         a reference game and a move
         '''
         self.grid = game.grid
+        game.grid = None
         self.seg_len = game.seg_len
         self.touching_rule = game.touching_rule
         self.score = game.score + 1
@@ -397,9 +439,8 @@ class PlayingGame(Game):
         '''
         if depth > 0:
             self.grid.remove_segment(self.last_move, seg_len = self.seg_len)
-            # 'delete' the current game by emptying its score and moves
-            # self.score = -1
-            # self.moves = []
+            self.parent.grid = self.grid
+            self.grid = None
             return self.parent.unplay(depth - 1)
         return self
     
@@ -412,15 +453,14 @@ class PlayingGame(Game):
         list.append([self.score, len(self.moves), self.last_move])
         return list
     
-    def games_list(self, grid = None):
+    def games_list(self):
         '''
         Returns a list of all the games corresponding to intermediate steps,
         constructing the grid if necessary
         '''
-        if grid is not None:
-            self.grid = grid
-        grid_copy = self.grid.copy()
-        grid_copy.remove_segment(self.last_move, seg_len = self.seg_len)    
-        list = self.parent.games_list(grid_copy)
+        if self.parent.grid is None:
+            self.parent.grid = self.grid.copy()
+            self.parent.grid.remove_segment(self.last_move, seg_len = self.seg_len)
+        list = self.parent.games_list()
         list.append(self)
         return list
