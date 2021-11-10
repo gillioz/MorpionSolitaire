@@ -7,7 +7,8 @@ General comments
 See documentation at [fast.ai](https://www.fast.ai/2020/01/20/nb2md/).
 
 Might need to install `nbdev` with command:
-```pip install nbdev
+```
+pip install nbdev
 ```
 
 
@@ -21,10 +22,12 @@ Exporting to markdown
 1. Save notebook by pressing `s`
 1. Close browser tab (important!)
 1. In a terminal, run
-```nbdev_nb2md <name>.ipynb
+```
+nbdev_nb2md <name>.ipynb
 ```
 1. In a terminal, run
-```python upd_md.py <name>.md
+```
+python upd_md.py <name>.md
 ```
 1. Copy `<name>.md` to the `_posts` folder in the blog repo
 1. Rename it `YEAR-MONTH-DAY-<name>.md` there
