@@ -232,7 +232,7 @@ class Game:
         '''
         The class Game is an abstract class: one should not use this
         constructor directly (it raises an exception) but use instead
-        one of the child classes StartingGame or PlayingGame
+        one of the child classes NewGame or RunningGame
         '''
         raise Exception('The class "Game" is an abstract class: it cannot be instantiated.')
     
@@ -296,7 +296,7 @@ class Game:
             i = index
         if copy_grid:
             newgrid = self.grid.copy()
-        newgame = PlayingGame(self, self.moves[i])
+        newgame = RunningGame(self, self.moves[i])
         if copy_grid:
             self.grid = newgrid
         return newgame.play(index = index, model = model, t = t, depth = depth - 1)
@@ -317,7 +317,7 @@ class Game:
         max_depth = 1
         currentgrid = self.grid.copy()
         for move in self.moves:
-            max_depth = max(max_depth, PlayingGame(self, move).explore_depth(depth - 1) + 1)
+            max_depth = max(max_depth, RunningGame(self, move).explore_depth(depth - 1) + 1)
             self.grid = currentgrid.copy()
             if max_depth >= depth:
                 return depth
@@ -345,7 +345,7 @@ class Game:
     
 
 
-class StartingGame(Game):
+class NewGame(Game):
     '''
     Child class of Game, to be used to initialize a game
     '''
@@ -369,7 +369,7 @@ class StartingGame(Game):
     def __init__(self, pattern='cross', seg_len = 4, touching_rule = True,
                  iteration = 100):
         '''
-        Constructor for the class StartingGame, taking as arguments
+        Constructor for the class NewGame, taking as arguments
         the initial pattern and the rules
         '''
         self.grid = Grid(pattern)
@@ -409,7 +409,7 @@ class StartingGame(Game):
 
 
 
-class PlayingGame(Game):
+class RunningGame(Game):
     '''
     Child class of Game, automatically created when the method play is called
     '''
