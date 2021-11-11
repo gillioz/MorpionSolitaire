@@ -293,7 +293,7 @@ class Game:
                 else:
                     i = np.argmax(weights)
         else:
-            i = index
+            i = index % len(self.moves)
         if copy_grid:
             newgrid = self.grid.copy()
         newgame = RunningGame(self, self.moves[i])
