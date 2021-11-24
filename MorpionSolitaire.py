@@ -108,6 +108,25 @@ class Grid(np.ndarray):
                                  [y,y+self.DIRECTIONS[dir][1]],
                                  color = color)
     
+    def image(self):
+        '''
+        Returns a square array of booleans (0 or 1)
+        representing the current grid
+        '''
+        size = 3 * self.GRID_SIZE - 2
+        im = np.empty((size, size), dtype=bool)
+        im[0::3,0::3] = self[0,:,:]
+        im[1::3,0::3] = self[1,:-1,:]
+        im[2::3,0::3] = self[1,:-1,:]
+        im[0::3,1::3] = self[2,:,:-1]
+        im[0::3,2::3] = self[2,:,:-1]
+        im[1::3,1::3] = self[3,:-1,:-1]
+        im[2::3,2::3] = self[3,:-1,:-1]
+        im[1::3,2::3] = self[4,1:,:-1]
+        im[2::3,1::3] = self[4,1:,:-1]
+        return im
+        
+    
     def add_segment(self, move, seg_len = 4,
                     touching_rule = True, check_legal = True):
         '''
