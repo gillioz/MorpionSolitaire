@@ -1,4 +1,15 @@
+import numpy as np
 import torch
+from PIL import Image
+from tqdm.notebook import trange
+
+
+def MSvisualize(grid):
+    '''
+    This is a simple function that displays
+    an image of the grid
+    '''
+    return Image.fromarray(~np.array(torch.squeeze(grid)).astype('bool'))
 
 
 class MSDataFrame:
@@ -79,7 +90,6 @@ class MSDataFrame:
         '''
         self.data[self.iterator] = (torch.rot90(self.data[self.iterator][0], 1, [-2,-1]),
                                     self.data[self.iterator][1])
-        pass
     
     def batch_flip(self):
         '''
@@ -88,5 +98,27 @@ class MSDataFrame:
         '''
         self.data[self.iterator] = (torch.flip(self.data[self.iterator][0], [-1]),
                                     self.data[self.iterator][1])
-        pass
     
+    def train_model(self, net,n_epochs = 50,
+                    accuracy_func = None, loss_func = torch.nn.MSELoss(),
+                    lr=0.01, momentum=0.9):
+        optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
+        for epoch in trange(n_epochs):
+            running_loss = 0.0
+            for i in range(self.length):
+                inputs, labels = self.read()
+                optimizer.zero_grad()
+                outputs = net(inputs)
+                loss = loss_func(outputs, labels)
+                loss.backward()
+                optimizer.step()
+                self.iterate()
+                running_loss += loss.item()
+            if accuracy_func is not None:
+                print('[%d]  loss: %.3f   accuracy: %.2f' %
+                      (epoch, running_loss / self.length,
+                       accuracy_func(outputs, labels)))
+            else:
+                print('[%d]  loss: %.3f' %
+                      (epoch, running_loss / self.length))
+   
