@@ -99,9 +99,21 @@ class MSDataFrame:
         self.data[self.iterator] = (torch.flip(self.data[self.iterator][0], [-1]),
                                     self.data[self.iterator][1])
     
-    def train_model(self, net,n_epochs = 50,
-                    accuracy_func = None, loss_func = torch.nn.MSELoss(),
-                    lr=0.01, momentum=0.9):
+    def train_model(self, net, n_epochs = 50, lr=0.01, momentum=0.9,
+                    loss_func = torch.nn.MSELoss(), accuracy_func = None,
+                    running_loss_data = None, accuracy_data = None):
+        '''
+        Train a model on the data. This takes as arguments:
+         - the neural network
+         - the number of iterations over all the data
+         - learning rate and momentum
+         - the loss function (by default mean square error)
+         - a function measuring accuracy
+         - arrays in which to store indermediate values of the loss and accuracy
+        
+        After each epoch, the function prints the current value of the loss
+        (and accuracy of the last batch, if available)
+        '''
         optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
         for epoch in trange(n_epochs):
             running_loss = 0.0
@@ -114,11 +126,16 @@ class MSDataFrame:
                 optimizer.step()
                 self.iterate()
                 running_loss += loss.item()
+            running_loss /= self.length
+            if isinstance(running_loss_data, list):
+                running_loss_data.append(running_loss)
             if accuracy_func is not None:
+                accuracy = accuracy_func(outputs, labels)
                 print('[%d]  loss: %.3f   accuracy: %.2f' %
-                      (epoch, running_loss / self.length,
-                       accuracy_func(outputs, labels)))
+                      (epoch, running_loss, accuracy))
+                if isinstance(accuracy_data, list):
+                    accuracy_data.append(accuracy)
             else:
                 print('[%d]  loss: %.3f' %
-                      (epoch, running_loss / self.length))
+                      (epoch, running_loss))
    
