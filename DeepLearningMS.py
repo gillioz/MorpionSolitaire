@@ -18,31 +18,46 @@ class MSDataFrame:
     stores a certain number of mini-batches in an array,
     iterates over that array, and updates the mini-batches
     by applying transformations or replacing them with new ones
-    after a full cycle
+    after a given number of steps
     '''
     
-    
-    def __init__(self, batch_fct, repeat = 3, size = 100):
+    def __init__(self, batch_fct = None, batch_size = 100,
+                 repeat = 0, length = 100,
+                 data = None, labels = None):
         '''
         Constructor for the class MSDataFrame
         takes as argument a function to create a mini-batch,
-        the number of times a mini-batch is used (times 8 orientations)
-        and an approximate number of mini-batches to be stored.
+        the size of the mini-batches,
+        the number of mini-batches to be stored,
+        and the number of times a mini-batch is used
+        (in 8 different orientations, so typically a multiple of 8).
         
-        The exact number of mini-batches stored is given by the formula
-            (8 * repeat * n) + 1
-        where n is the result of the integer division
-            n // (8 * repeat)
+        By default the initial data is constructed using batch_fct,
+        but it can alternatively be loaded from a pair of files
+        (one for the data, one for the labels)
         '''
         self.batch_fct = batch_fct
-        self.cycle_length = 8 * repeat
-        self.length = (size // self.cycle_length) * self.cycle_length + 1
+        self.batch_size = batch_size
+        self.repeat = repeat
         self.iterator = 0
         self.cycle = 1
+        self.offset = 1
         self.data = []
+        if (data is not None) and (labels is not None):
+            x = np.load(data)
+            y = np.load(labels)
+            if x.shape[0] == y.shape[0]:
+                self.length = min(length, x.shape[0] // self.batch_size)
+                self.batch_count = 0
+                for i in range(self.length):
+                    xi = torch.tensor(x[i* self.batch_size:(i+1)*self.batch_size]).float().unsqueeze(1)
+                    yi = torch.tensor(y[i* self.batch_size:(i+1)*self.batch_size]).float().unsqueeze(1)
+                    self.data.append((xi, yi))
+                return
+        self.length = length
         for i in range(self.length):
-            self.data.append(batch_fct())
-        self.n_batches = self.length
+            self.data.append(batch_fct(self.batch_size))
+        self.batch_count = self.length
         
 	
     def info(self):
@@ -50,15 +65,11 @@ class MSDataFrame:
         Returns some info about the current dataframe
         '''
         print('Number of mini-batches stored:', self.length)
-        print('Number of times a mini-batch is used:', self.cycle_length)
-        print('Number of mini-batches created:', self.n_batches)
+        print('Number of mini-batches created:', self.batch_count)
     
     def read(self):
         '''
-        This method return the current mini-batch,
-        and then iterates to the next one after
-        applying some transformations or replacing
-        it with a new one
+        Returns the current mini-batch
         '''
         return self.data[self.iterator]
     
@@ -71,17 +82,22 @@ class MSDataFrame:
         '''
         # at the end of a cycle, update the current mini-batch
         if self.cycle == 0:
-            self.data[self.iterator] = self.batch_fct()
-            self.n_batches += 1
+            self.data[self.iterator] = self.batch_fct(self.batch_size)
+            self.batch_count += 1
         # every fourth iteration apply mirror transformation to current mini-batch
         elif self.cycle % 4 == 0:
             self.batch_flip()
         # any other time apply rotation to current mini-batch
         else:
             self.batch_rotate()
-        # increment cycle and iterator
-        self.cycle = (self.cycle + 1) % self.cycle_length
+        # increment iterator and cycle
         self.iterator = (self.iterator + 1) % self.length
+        if self.repeat > 0:
+            if self.iterator == 0:
+                self.offset = (self.offset + 1) % self.repeat
+                self.cycle = self.offset
+            else:
+                self.cycle = (self.cycle + 1) % self.repeat
     
     def batch_rotate(self):
         '''
@@ -101,7 +117,7 @@ class MSDataFrame:
     
     def train_model(self, net, n_epochs = 50, lr=0.01, momentum=0.9,
                     loss_func = torch.nn.MSELoss(), accuracy_func = None,
-                    running_loss_data = None, accuracy_data = None):
+                    loss_monitoring = None, accuracy_monitoring = None):
         '''
         Train a model on the data. This takes as arguments:
          - the neural network
@@ -117,6 +133,7 @@ class MSDataFrame:
         optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
         for epoch in trange(n_epochs):
             running_loss = 0.0
+            running_accuracy = 0.0 
             for i in range(self.length):
                 inputs, labels = self.read()
                 optimizer.zero_grad()
@@ -126,15 +143,17 @@ class MSDataFrame:
                 optimizer.step()
                 self.iterate()
                 running_loss += loss.item()
+                if accuracy_func is not None:
+                    running_accuracy += accuracy_func(outputs, labels)
             running_loss /= self.length
-            if isinstance(running_loss_data, list):
-                running_loss_data.append(running_loss)
+            running_accuracy /= self.length
+            if isinstance(loss_monitoring, list):
+                loss_monitoring.append(running_loss)
             if accuracy_func is not None:
-                accuracy = accuracy_func(outputs, labels)
                 print('[%d]  loss: %.3f   accuracy: %.2f' %
-                      (epoch, running_loss, accuracy))
-                if isinstance(accuracy_data, list):
-                    accuracy_data.append(accuracy)
+                      (epoch, running_loss, running_accuracy))
+                if isinstance(accuracy_monitoring, list):
+                    accuracy_monitoring.append(running_accuracy)
             else:
                 print('[%d]  loss: %.3f' %
                       (epoch, running_loss))
