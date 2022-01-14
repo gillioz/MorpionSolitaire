@@ -1,0 +1,17 @@
+digraph "Democritus architecture" {
+	node [fontsize=12]
+	edge [arrowsize=0.7 fontsize=10]
+	0 [label="Grid image"]
+	1 [label="Convolutional layer, 13 x 13 kernel, stride 3" fillcolor=lightpink shape=box style=filled]
+	2 [label="Max pool" fillcolor=gray90 shape=invhouse style=filled]
+	3 [label="Linear layer + ReLu" fillcolor=aquamarine shape=box style=filled]
+	4 [label="Linear layer + ReLu" fillcolor=aquamarine shape=box style=filled]
+	5 [label="Linear layer" fillcolor=aquamarine shape=box style=filled]
+	6 [label=Output fontsize=12]
+	0 -> 1 [label="  1 x  94 x 94"]
+	1 -> 2 [label="  40 x  27 x 27"]
+	2 -> 3 [label="  40"]
+	3 -> 4 [label="  4"]
+	4 -> 5 [label="  2"]
+	5 -> 6 [label="  1"]
+}
