@@ -130,7 +130,11 @@ class MSDataFrame:
         After each epoch, the function prints the current value of the loss
         (and accuracy of the last batch, if available)
         '''
-        optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+#         optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+        # Only optimize over trainable parameters:
+        # this is useful for "freezing" some parameters
+        optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
+                                    lr=lr, momentum=0.9)
         for epoch in trange(n_epochs):
             running_loss = 0.0
             running_accuracy = 0.0 
