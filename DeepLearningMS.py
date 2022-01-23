@@ -124,20 +124,23 @@ class MSDataFrame:
          - the number of iterations over all the data
          - learning rate and momentum
          - the loss function (by default mean square error)
-         - a function measuring accuracy
+         - a function measuring accuracy (or a list of functions)
          - arrays in which to store indermediate values of the loss and accuracy
         
         After each epoch, the function prints the current value of the loss
         (and accuracy of the last batch, if available)
         '''
-#         optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+        optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
         # Only optimize over trainable parameters:
         # this is useful for "freezing" some parameters
-        optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
-                                    lr=lr, momentum=0.9)
+#         optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
+#                                     lr=lr, momentum=0.9)
         for epoch in trange(n_epochs):
             running_loss = 0.0
-            running_accuracy = 0.0 
+            if isinstance(accuracy_func, list):
+                running_accuracy = np.zeros(len(accuracy_func))
+            else:
+                running_accuracy = np.array([0.0]) 
             for i in range(self.length):
                 inputs, labels = self.read()
                 optimizer.zero_grad()
@@ -148,17 +151,22 @@ class MSDataFrame:
                 self.iterate()
                 running_loss += loss.item()
                 if accuracy_func is not None:
-                    running_accuracy += accuracy_func(outputs, labels)
+                    if isinstance(accuracy_func, list):
+                        running_accuracy += np.array([f(outputs, labels) for f in accuracy_func])
+                    else:
+                        running_accuracy += np.array([accuracy_func(outputs, labels)])
             running_loss /= self.length
-            running_accuracy /= self.length
+            print('[%d]  loss: %.5f  ' % (epoch, running_loss),
+                  end = '')
             if isinstance(loss_monitoring, list):
                 loss_monitoring.append(running_loss)
             if accuracy_func is not None:
-                print('[%d]  loss: %.3f   accuracy: %.2f' %
-                      (epoch, running_loss, running_accuracy))
+                running_accuracy /= self.length
+                print('accuracy: ', end = '')
+                for a in running_accuracy:
+                    print('%.2f  ' % a, end = '')
                 if isinstance(accuracy_monitoring, list):
                     accuracy_monitoring.append(running_accuracy)
-            else:
-                print('[%d]  loss: %.3f' %
-                      (epoch, running_loss))
+            print('')
+                
    
