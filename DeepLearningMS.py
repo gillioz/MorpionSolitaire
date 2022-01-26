@@ -115,7 +115,7 @@ class MSDataFrame:
         self.data[self.iterator] = (torch.flip(self.data[self.iterator][0], [-1]),
                                     self.data[self.iterator][1])
     
-    def train_model(self, net, n_epochs = 50, lr=0.01, momentum=0.9,
+    def train_model(self, net, n_epochs = 50, lr=0.01, optim = 'SGD', momentum=0.9,
                     loss_func = torch.nn.MSELoss(), accuracy_func = None,
                     loss_monitoring = None, accuracy_monitoring = None):
         '''
@@ -130,11 +130,14 @@ class MSDataFrame:
         After each epoch, the function prints the current value of the loss
         (and accuracy of the last batch, if available)
         '''
-        optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
         # Only optimize over trainable parameters:
         # this is useful for "freezing" some parameters
-#         optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
-#                                     lr=lr, momentum=0.9)
+        if optim == 'Adam':
+            optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()),
+                                         lr=lr)
+        else:
+            optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
+                                        lr=lr, momentum=momentum)
         for epoch in trange(n_epochs):
             running_loss = 0.0
             if isinstance(accuracy_func, list):
