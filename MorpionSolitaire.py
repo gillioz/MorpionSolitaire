@@ -294,7 +294,9 @@ class Game:
         if depth == 0 or len(self.moves) == 0:
             return self
         if index is None:
-            if model is None:
+            if len(self.moves) == 1:
+                i = 0
+            elif model is None:
                 i = np.random.randint(len(self.moves))
             else:
                 weights = self.compute_weights(model)
@@ -357,7 +359,7 @@ class Game:
             self.grid.add_segment(move, seg_len = self.seg_len,
                                   touching_rule = self.touching_rule,
                                   check_legal = False)
-            grids.append(np.array(self.grid.copy()))
+            grids.append(np.array(self.grid.image()))
             self.grid.remove_segment(move, seg_len = self.seg_len)
         grids = np.array(grids)
         return model(grids)
