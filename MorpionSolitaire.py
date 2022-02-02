@@ -364,6 +364,19 @@ class Game:
         grids = np.array(grids)
         return model(grids)
     
+    def save(self, filename):
+        '''
+        Saves the game data as "filename_type.npy",
+        so that it can later be loaded again
+        '''
+        file = filename + '_' + self.starting_pattern() + str(self.seg_len + 1)
+        if self.touching_rule == False:
+            file += 'D'
+        file += '.npy'
+        moves = np.array(self.moves_list())
+        np.save(file, moves)
+        print('Game saved to:' , file)
+        return
 
 
 class NewGame(Game):
@@ -427,7 +440,31 @@ class NewGame(Game):
         Returns a list containing the current game
         '''
         return [self]
-
+    
+    def moves_list(self):
+        '''
+        Returns a list of moves that led to the current game,
+        i.e. an empty list
+        '''
+        return []
+    
+    def starting_pattern(self):
+        '''
+        Gets the starting pattern of the game
+        '''
+        return self.pattern
+    
+    def load(self, filename):
+        '''
+        Creates a sequence of games
+        following the list of moves stored in "filename",
+        and returns the last game
+        '''
+        moves = np.load(filename)
+        game = self
+        for m in moves:
+            game = RunningGame(game, m)
+        return game
 
 
 class RunningGame(Game):
@@ -485,3 +522,19 @@ class RunningGame(Game):
         list = self.parent.games_list()
         list.append(self)
         return list
+    
+    def moves_list(self):
+        '''
+        Returns a list of moves that led to the current game
+        '''
+        list = self.parent.moves_list()
+        list.append(self.last_move)
+        return list
+
+    def starting_pattern(self):
+        '''
+        Gets the starting pattern of the game,
+        stored in an instance of a parent NewGame
+        '''
+        return self.parent.starting_pattern()
+    
