@@ -69,6 +69,7 @@ class DrawingStep:
             element_dictionary['line'] = [point.to_tuple() for point in self.line]
         return json.dumps(element_dictionary)
 
+
 ################################################
 
 class DrawingCross(DrawingStep):
@@ -86,6 +87,7 @@ class DrawingCross(DrawingStep):
             GridCoordinates(3, 7), GridCoordinates(6, 7), GridCoordinates(3, 8), GridCoordinates(6, 8),
             GridCoordinates(3, 9), GridCoordinates(4, 9), GridCoordinates(5, 9), GridCoordinates(6, 9)]
         self.line = []
+
 
 ################################################
 
@@ -122,8 +124,9 @@ class Segment(DrawingStep):
                 self.image_lines.append(p)
 
     def validate(self, dot: ImageCoordinates) -> None:
-        self.image_lines = [dot]
-        self.add_dot(GridCoordinates(dot.x // 3, dot.y //3))    # use dot.to_grid_coordinates() instead (to be implemented)
+        self.image_dots = [dot]
+        self.add_dot(
+            GridCoordinates(dot.x // 3, dot.y // 3))  # use dot.to_grid_coordinates() instead (to be implemented)
         self.valid = True
 
 
@@ -254,16 +257,18 @@ class Grid:
 
     def validate(self, segment: Segment) -> bool:
         if segment.valid:
-            return False
+            return False  # check instead whether the segment is still valid!
         for pt in segment.image_lines:
             if self.get(pt):
                 return False
-        dots_count = 0
+        empty_dots_count = 0
         empty_dot = None
         for pt in segment.image_dots:
             if not self.get(pt):
-                dots_count += 1
+                empty_dots_count += 1
                 empty_dot = pt
+        if empty_dots_count != 1:
+            return False
         segment.validate(empty_dot)
         return True
 
@@ -285,6 +290,38 @@ class Grid:
 
 
 ################################################
+# PLAYABLE COMMAND-LINE GAME
+
+def playable_game() -> None:
+    grid = Grid()
+    grid.add_points(DrawingCross().dots)
+    score = 0
+    grid.print_image_as_text()
+    while True:
+        print()
+        print()
+        print('Draw a segment:')
+        x1 = int(input(' - start point: x:  '))
+        y1 = int(input('                y:  '))
+        x2 = int(input(' - end point: x:  '))
+        y2 = int(input('              y:  '))
+        segment = Segment(GridCoordinates(x1, y1), GridCoordinates(x2, y2), 4, False)
+        if grid.validate(segment):
+            score += 1
+            grid.add(segment)
+            print()
+            grid.print_image_as_text()
+            print()
+            print('Score:', score)
+        else:
+            print('!!! This is not a valid segment !!!')
+
+
+
+
+
+
+################################################
 # TESTS
 
 def tests() -> None:
@@ -300,20 +337,13 @@ def tests() -> None:
 # MAIN
 if __name__ == '__main__':
     tests()
-    my_grid = Grid(dimensions=GridCoordinates(6, 6),
-                   origin=GridCoordinates(0,0))
+    # my_grid = Grid(dimensions=GridCoordinates(6, 6),
+    #                origin=GridCoordinates(0, 0))
+    # my_grid.add_points(DrawingCross().dots)
+    #
+    # my_segment = Segment(GridCoordinates(4, 0), GridCoordinates(0, 4), 4, True)
+    # # if my_grid.validate(my_segment):
     # my_grid.add(my_segment)
-    my_grid.print_image_as_text()
-    my_grid.add_points(DrawingCross().dots)
-    my_grid.print_image_as_text()
-
-    my_segment = Segment(GridCoordinates(4, 0), GridCoordinates(0, 4), 4, True)
-    my_segment = Segment(GridCoordinates(1, 1), GridCoordinates(1, 5), 4, True)
-    print(my_grid.validate(my_segment))
-    print(my_segment.json_description())
-    my_grid.add(my_segment)
-    my_grid.print_image_as_text()
-
-
-
-
+    # print(my_segment.json_description())
+    # my_grid.print_image_as_text()
+    playable_game()
