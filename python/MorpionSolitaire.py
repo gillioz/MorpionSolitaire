@@ -72,7 +72,7 @@ class DrawingStep:
 
 ################################################
 
-class DrawingCross(DrawingStep):
+class GraphCross(DrawingStep):
 
     def __init__(self):
         super().__init__()
@@ -290,11 +290,55 @@ class Grid:
 
 
 ################################################
+
+class SvgImage:
+    resolution: int
+    width: int
+    height: int
+    elements: List[str]
+
+    def __init__(self, grid: Grid, resolution: int = 20) -> None:
+        self.resolution = resolution
+        w, h = grid.dimensions.to_tuple()
+        self.width = resolution * w + 1
+        self.height = resolution * h + 1
+        grid_style = "stroke:rgb(127,127,127);stroke-width:1"
+        self.elements = []
+        for x in range(w + 1):
+            self.elements.append(f'<line x1="{resolution * x}" y1="0" x2="{resolution * x}" y2="{resolution * h}" style="{grid_style}"/>')
+        for y in range(h + 1):
+            self.elements.append(f'<line x1="0" y1="{resolution * y}" x2="{resolution * w}" y2="{resolution * y}" style="{grid_style}"/>')
+
+    def add_grid(self, grid: Grid) -> None:
+        w, h = grid.dimensions.to_tuple()
+        for x in range(w + 1):
+            self.elements.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{h}" style="{grid_style}"')
+        for y in range(h + 1):
+            self.elements.append(f'<line x1="0" y1="{y}" x2="{w}" y2="{y}" style="{grid_style}"')
+
+    def add_step(self, drawing: DrawingStep) -> None:
+        pass
+
+    def save(self, filename: str) -> None:
+        with open(filename, 'w') as f:
+            f.write('<html>\n')
+            f.write('<body>\n')
+            # f.write('<h1>Title</h1>\n')
+            f.write(f'<svg width="{self.width:d}" height="{self.height:d}">\n')
+            for e in self.elements:
+                f.write('  ' + e  + '\n')
+            f.write('</svg>\n')
+            f.write('</body>\n')
+            f.write('</html>\n')
+            print(f'File written to: {filename}')
+
+
+################################################
 # PLAYABLE COMMAND-LINE GAME
 
 def playable_game() -> None:
     grid = Grid()
-    grid.add_points(DrawingCross().dots)
+    grid.add_points(GraphCross().dots)
     score = 0
     grid.print_image_as_text()
     while True:
@@ -317,10 +361,6 @@ def playable_game() -> None:
             print('!!! This is not a valid segment !!!')
 
 
-
-
-
-
 ################################################
 # TESTS
 
@@ -337,8 +377,8 @@ def tests() -> None:
 # MAIN
 if __name__ == '__main__':
     tests()
-    # my_grid = Grid(dimensions=GridCoordinates(6, 6),
-    #                origin=GridCoordinates(0, 0))
+    my_grid = Grid(dimensions=GridCoordinates(6, 6),
+                   origin=GridCoordinates(0, 0))
     # my_grid.add_points(DrawingCross().dots)
     #
     # my_segment = Segment(GridCoordinates(4, 0), GridCoordinates(0, 4), 4, True)
@@ -346,4 +386,5 @@ if __name__ == '__main__':
     # my_grid.add(my_segment)
     # print(my_segment.json_description())
     # my_grid.print_image_as_text()
-    playable_game()
+    output = SvgImage(my_grid)
+    output.save('drawing.html')
