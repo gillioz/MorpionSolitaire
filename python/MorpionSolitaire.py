@@ -22,6 +22,11 @@ class ImageCoordinates:
     def to_tuple(self) -> (int, int):
         return self.x, self.y
 
+    def is_dot(self) -> bool:
+        if (self.x % 3 == 0) and (self.y % 3 == 0):
+            return True
+        return False
+
 
 ################################################
 
@@ -46,7 +51,16 @@ class GridCoordinates:
 
 ################################################
 
-class DrawingStep:
+class ImageAction:
+    pixels: List[ImageCoordinates]
+
+    def __init__(self):
+        self.pixels = []
+
+
+################################################
+
+class GridAction:
     dots: List[GridCoordinates]
     line: List[GridCoordinates]
 
@@ -61,7 +75,7 @@ class DrawingStep:
     def add_dot(self, p: GridCoordinates) -> None:
         self.dots.append(p)
 
-    def json_description(self) -> json:
+    def to_json(self) -> json:
         element_dictionary = {}
         if len(self.dots) > 0:
             element_dictionary['dots'] = [point.to_tuple() for point in self.dots]
@@ -72,7 +86,7 @@ class DrawingStep:
 
 ################################################
 
-class GraphCross(DrawingStep):
+class CrossGridAction(GridAction):
 
     def __init__(self):
         super().__init__()
@@ -91,59 +105,32 @@ class GraphCross(DrawingStep):
 
 ################################################
 
-class Segment(DrawingStep):
-    image_dots: List[ImageCoordinates]
-    image_lines: List[ImageCoordinates]
-    valid: bool
+class GameLink:
+    grid_action: GridAction
+    image_action: ImageAction
 
-    def __init__(self, p1: GridCoordinates, p2: GridCoordinates, length: int, no_touching_rule: bool) -> None:
-        if (length == 0):
-            raise Exception('Invalid segment length: 0')
-        DrawingStep.__init__(self)
-        self.add_line(p1, p2)
-        self.image_dots = []
-        self.image_lines = []
-        self.valid = False
-        w = p2.x - p1.x
-        h = p2.y - p1.y
-        if ((w != 0) and (abs(w) != length)) or ((h != 0) and (abs(h) != length)) or ((w == 0) and (h == 0)):
-            raise Exception(
-                'No segment can be defined between the points ({0},{1}) and ({2},{3})'.format(p1.x, p1.y, p2.x, p2.y))
-        dx = w // length
-        dy = h // length
-        x, y = p1.to_image_coordinates().to_tuple()
-        if not no_touching_rule:
-            index_range = range(0, 3 * length + 1)
-        else:
-            index_range = range(-1, 3 * length + 2)
-        for index in index_range:
-            p = ImageCoordinates(x + index * dx, y + index * dy)
-            if index % 3 == 0:
-                self.image_dots.append(p)
-            else:
-                self.image_lines.append(p)
+    def __init__(self):
+        self.grid_action = GridAction()
+        self.image_action = ImageAction()
 
-    def validate(self, dot: ImageCoordinates) -> None:
-        self.image_dots = [dot]
-        self.add_dot(
-            GridCoordinates(dot.x // 3, dot.y // 3))  # use dot.to_grid_coordinates() instead (to be implemented)
-        self.valid = True
+
+################################################
+class Grid:
+    actions: List[GridAction]
+
+    def __init__(self) -> None:
+        self.actions = []
 
 
 ################################################
 
-class Grid:
-    """
-    docstring
-    """
+class Image:
     dimensions: ImageCoordinates
     origin: ImageCoordinates
-    image: np.ndarray
+    image: np.ndarray  # can this eventually be inherited?
     size_increment: int
 
-    def __init__(self,
-                 dimensions: GridCoordinates = GridCoordinates(20, 20),
-                 origin: GridCoordinates = GridCoordinates(5, 5),
+    def __init__(self, dimensions: GridCoordinates, origin: GridCoordinates,
                  size_increment: int = 1) -> None:
         self.dimensions = dimensions.to_image_coordinates()
         self.origin = origin.to_image_coordinates()
@@ -223,7 +210,7 @@ class Grid:
         self.create_empty_image()
         self.image[:, :self.dimensions.y - self.size_increment] = image_copy
 
-    def print_image_as_text(self) -> None:
+    def print(self) -> None:
         w, h = self.image.shape
         contour_row = '+'
         for x in range(w):
@@ -255,38 +242,101 @@ class Grid:
             print(row)
         print(contour_row)
 
-    def validate(self, segment: Segment) -> bool:
-        if segment.valid:
-            return False  # check instead whether the segment is still valid!
-        for pt in segment.image_lines:
+    def is_valid(self, action: ImageAction) -> bool:
+        for pt in action.pixels:
             if self.get(pt):
                 return False
-        empty_dots_count = 0
-        empty_dot = None
-        for pt in segment.image_dots:
-            if not self.get(pt):
-                empty_dots_count += 1
-                empty_dot = pt
-        if empty_dots_count != 1:
-            return False
-        segment.validate(empty_dot)
         return True
 
-    def apply(self, segment: Segment, value: bool) -> None:
-        for pt in segment.image_lines:
-            self.set(pt, value)
-        for pt in segment.image_dots:
+    def apply(self, action: ImageAction, value: bool) -> None:
+        for pt in action.pixels:
             self.set(pt, value)
 
-    def add(self, segment: Segment) -> None:
-        self.apply(segment, True)
+    def add(self, action: ImageAction) -> None:
+        self.apply(action, True)
 
-    def remove(self, segment: Segment) -> None:
-        self.apply(segment, False)
+    def remove(self, action: ImageAction) -> None:
+        self.apply(action, False)
 
     def add_points(self, points: List[GridCoordinates]) -> None:
         for pt in points:
             self.set(pt.to_image_coordinates(), True)
+
+
+################################################
+
+class Segment(GameLink):
+    def __init__(self, p1: GridCoordinates, p2: GridCoordinates,
+                 length: int, no_touching_rule: bool,
+                 image: Image) -> None:
+        if length == 0:
+            raise Exception('Invalid segment length: 0')
+        GameLink.__init__(self)
+        w = p2.x - p1.x
+        h = p2.y - p1.y
+        if ((w != 0) and (abs(w) != length)) or ((h != 0) and (abs(h) != length)) or ((w == 0) and (h == 0)):
+            raise Exception(
+                'No segment can be defined between the points ({0},{1}) and ({2},{3})'.format(p1.x, p1.y, p2.x, p2.y))
+        dx = w // length
+        dy = h // length
+        x, y = p1.to_image_coordinates().to_tuple()
+        if not no_touching_rule:
+            index_range = range(0, 3 * length + 1)
+        else:
+            index_range = range(-1, 3 * length + 2)
+        pixels = [ImageCoordinates(x + i * dx, y + i * dy) for i in index_range]
+        empty_dots_count = 0
+        empty_dot = None
+        for pt in pixels:
+            if pt.is_dot():
+                if not image.get(pt):
+                    empty_dots_count += 1
+                    empty_dot = pt
+            else:
+                if image.get(pt):
+                    raise Exception('The segment cannot overlap existing lines')
+        if empty_dots_count != 1:
+            raise Exception('The segment must go through {0} existing dots exactly'.format(length))
+
+        self.image_action.pixels.append(empty_dot)
+        for pt in pixels:
+            if not pt.is_dot():
+                self.image_action.pixels.append(pt)
+        self.grid_action.add_dot(
+            GridCoordinates(empty_dot.x // 3,
+                            empty_dot.y // 3))  # use dot.to_grid_coordinates() instead (to be implemented)
+        self.grid_action.add_line(p1, p2)
+
+
+################################################
+
+class GameNode:
+    root: GameLink
+    branches: List[GameLink]
+
+    pass
+
+
+################################################
+class Game:
+    grid: Grid
+    image: Image
+    length: int
+    index: int
+    nodes: List[GameNode]  # can it be inherited instead?
+
+    def __init__(self,
+                 dimensions: GridCoordinates = GridCoordinates(20, 20),
+                 origin: GridCoordinates = GridCoordinates(5, 5)
+                 ):
+        self.grid = Grid()
+        self.image = Image(dimensions, origin)
+        self.length = 0  # eventually 1
+        self.index = 0
+        self.nodes = []  # eventually a starting configuration
+
+    def set_index(self, index: int):
+        pass
 
 
 ################################################
@@ -296,27 +346,30 @@ class SvgImage:
     width: int
     height: int
     elements: List[str]
+    grid_style: str
 
     def __init__(self, grid: Grid, resolution: int = 20) -> None:
         self.resolution = resolution
         w, h = grid.dimensions.to_tuple()
         self.width = resolution * w + 1
         self.height = resolution * h + 1
-        grid_style = "stroke:rgb(127,127,127);stroke-width:1"
+        self.grid_style = "stroke:rgb(127,127,127);stroke-width:1"
         self.elements = []
         for x in range(w + 1):
-            self.elements.append(f'<line x1="{resolution * x}" y1="0" x2="{resolution * x}" y2="{resolution * h}" style="{grid_style}"/>')
+            self.elements.append(
+                f'<line x1="{resolution * x}" y1="0" x2="{resolution * x}" y2="{resolution * h}" style="{self.grid_style}"/>')
         for y in range(h + 1):
-            self.elements.append(f'<line x1="0" y1="{resolution * y}" x2="{resolution * w}" y2="{resolution * y}" style="{grid_style}"/>')
+            self.elements.append(
+                f'<line x1="0" y1="{resolution * y}" x2="{resolution * w}" y2="{resolution * y}" style="{self.grid_style}"/>')
 
     def add_grid(self, grid: Grid) -> None:
         w, h = grid.dimensions.to_tuple()
         for x in range(w + 1):
-            self.elements.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{h}" style="{grid_style}"')
+            self.elements.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{h}" style="{self.grid_style}"')
         for y in range(h + 1):
-            self.elements.append(f'<line x1="0" y1="{y}" x2="{w}" y2="{y}" style="{grid_style}"')
+            self.elements.append(f'<line x1="0" y1="{y}" x2="{w}" y2="{y}" style="{self.grid_style}"')
 
-    def add_step(self, drawing: DrawingStep) -> None:
+    def add_step(self, drawing: GridAction) -> None:
         pass
 
     def save(self, filename: str) -> None:
@@ -326,7 +379,7 @@ class SvgImage:
             # f.write('<h1>Title</h1>\n')
             f.write(f'<svg width="{self.width:d}" height="{self.height:d}">\n')
             for e in self.elements:
-                f.write('  ' + e  + '\n')
+                f.write('  ' + e + '\n')
             f.write('</svg>\n')
             f.write('</body>\n')
             f.write('</html>\n')
@@ -336,11 +389,11 @@ class SvgImage:
 ################################################
 # PLAYABLE COMMAND-LINE GAME
 
-def playable_game() -> None:
-    grid = Grid()
-    grid.add_points(GraphCross().dots)
+def command_line_game() -> None:
+    image = Image(GridCoordinates(12, 12), GridCoordinates(1, 1))
+    image.add_points(CrossGridAction().dots)
     score = 0
-    grid.print_image_as_text()
+    image.print()
     while True:
         print()
         print()
@@ -349,42 +402,38 @@ def playable_game() -> None:
         y1 = int(input('                y:  '))
         x2 = int(input(' - end point: x:  '))
         y2 = int(input('              y:  '))
-        segment = Segment(GridCoordinates(x1, y1), GridCoordinates(x2, y2), 4, False)
-        if grid.validate(segment):
-            score += 1
-            grid.add(segment)
-            print()
-            grid.print_image_as_text()
-            print()
-            print('Score:', score)
-        else:
+        try:
+            segment = Segment(GridCoordinates(x1, y1), GridCoordinates(x2, y2), 4, False, image)
+        except:
             print('!!! This is not a valid segment !!!')
+        else:
+            image.add(segment.image_action)
+            score += 1
+            print()
+            image.print()
+            print()
+            print('Score:', score)0
+
 
 
 ################################################
 # TESTS
 
 def tests() -> None:
-    test_grid = Grid()
-    test_grid.extend_left()
-    test_grid.extend_right()
-    test_grid.extend_top()
-    test_grid.extend_bottom()
-    # print(test_grid.dimensions.x, test_grid.dimensions.y, test_grid.image.shape)
+    test_image = Image(dimensions=GridCoordinates(20, 20),
+                       origin=GridCoordinates(5, 5))
+    # print(test_image.dimensions.x, test_image.dimensions.y, test_image.image.shape)
+    test_image.extend_left()
+    test_image.extend_right()
+    test_image.extend_top()
+    test_image.extend_bottom()
+    # print(test_image.dimensions.x, test_image.dimensions.y, test_image.image.shape)
 
 
 ################################################
 # MAIN
 if __name__ == '__main__':
     tests()
-    my_grid = Grid(dimensions=GridCoordinates(6, 6),
-                   origin=GridCoordinates(0, 0))
-    # my_grid.add_points(DrawingCross().dots)
-    #
-    # my_segment = Segment(GridCoordinates(4, 0), GridCoordinates(0, 4), 4, True)
-    # # if my_grid.validate(my_segment):
-    # my_grid.add(my_segment)
-    # print(my_segment.json_description())
-    # my_grid.print_image_as_text()
-    output = SvgImage(my_grid)
-    output.save('drawing.html')
+    command_line_game()
+    # output = SvgImage(my_grid)
+    # output.save('drawing.html')
