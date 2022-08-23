@@ -3,33 +3,6 @@ import json
 from typing import List
 
 
-class ImageCoordinates:
-    x: int
-    y: int
-
-    def __init__(self, x: int, y: int) -> None:
-        self.x = x
-        self.y = y
-
-    # def __init__(self, coord: ImageCoordinates):
-    #     self.x = coord.x
-    #     self.y = coord.y
-
-    def add(self, x, y) -> None:
-        self.x += x
-        self.y += y
-
-    def to_tuple(self) -> (int, int):
-        return self.x, self.y
-
-    def is_dot(self) -> bool:
-        if (self.x % 3 == 0) and (self.y % 3 == 0):
-            return True
-        return False
-
-
-################################################
-
 class GridCoordinates:
     x: int
     y: int
@@ -38,15 +11,37 @@ class GridCoordinates:
         self.x = x
         self.y = y
 
-    # def __init__(self, coord: GridCoordinates):
-    #     self.x = coord.x
-    #     self.y = coord.y
+    def to_tuple(self) -> (int, int):
+        return self.x, self.y
 
-    def to_image_coordinates(self) -> ImageCoordinates:
-        return ImageCoordinates(3 * self.x, 3 * self.y)
+
+################################################
+class ImageCoordinates:
+    x: int
+    y: int
+
+    def __init__(self, *args) -> None:
+        if isinstance(args[0], GridCoordinates):
+            self.x = 3 * args[0].x
+            self.y = 3 * args[0].y
+        elif isinstance(args[0], int) and isinstance(args[1], int):
+            self.x = args[0]
+            self.y = args[1]
+
+    def add(self, x, y) -> None:
+        self.x += x
+        self.y += y
 
     def to_tuple(self) -> (int, int):
         return self.x, self.y
+
+    def to_grid_coordinates(self) -> GridCoordinates:
+        return GridCoordinates(self.x // 3, self.y // 3)
+
+    def is_dot(self) -> bool:
+        if (self.x % 3 == 0) and (self.y % 3 == 0):
+            return True
+        return False
 
 
 ################################################
@@ -86,25 +81,6 @@ class GridAction:
 
 ################################################
 
-class CrossGridAction(GridAction):
-
-    def __init__(self):
-        super().__init__()
-        self.dots = [
-            GridCoordinates(3, 0), GridCoordinates(4, 0), GridCoordinates(5, 0), GridCoordinates(6, 0),
-            GridCoordinates(3, 1), GridCoordinates(6, 1), GridCoordinates(3, 2), GridCoordinates(6, 2),
-            GridCoordinates(0, 3), GridCoordinates(1, 3), GridCoordinates(2, 3), GridCoordinates(3, 3),
-            GridCoordinates(6, 3), GridCoordinates(7, 3), GridCoordinates(8, 3), GridCoordinates(9, 3),
-            GridCoordinates(0, 4), GridCoordinates(9, 4), GridCoordinates(0, 5), GridCoordinates(9, 5),
-            GridCoordinates(0, 6), GridCoordinates(1, 6), GridCoordinates(2, 6), GridCoordinates(3, 6),
-            GridCoordinates(6, 6), GridCoordinates(7, 6), GridCoordinates(8, 6), GridCoordinates(9, 6),
-            GridCoordinates(3, 7), GridCoordinates(6, 7), GridCoordinates(3, 8), GridCoordinates(6, 8),
-            GridCoordinates(3, 9), GridCoordinates(4, 9), GridCoordinates(5, 9), GridCoordinates(6, 9)]
-        self.line = []
-
-
-################################################
-
 class GameLink:
     grid_action: GridAction
     image_action: ImageAction
@@ -132,8 +108,8 @@ class Image:
 
     def __init__(self, dimensions: GridCoordinates, origin: GridCoordinates,
                  size_increment: int = 1) -> None:
-        self.dimensions = dimensions.to_image_coordinates()
-        self.origin = origin.to_image_coordinates()
+        self.dimensions = ImageCoordinates(dimensions)
+        self.origin = ImageCoordinates(origin)
         self.origin.add(1, 1)
         self.create_empty_image()
         self.size_increment = 3 * size_increment
@@ -258,10 +234,6 @@ class Image:
     def remove(self, action: ImageAction) -> None:
         self.apply(action, False)
 
-    def add_points(self, points: List[GridCoordinates]) -> None:
-        for pt in points:
-            self.set(pt.to_image_coordinates(), True)
-
 
 ################################################
 
@@ -279,7 +251,7 @@ class Segment(GameLink):
                 'No segment can be defined between the points ({0},{1}) and ({2},{3})'.format(p1.x, p1.y, p2.x, p2.y))
         dx = w // length
         dy = h // length
-        x, y = p1.to_image_coordinates().to_tuple()
+        x, y = ImageCoordinates(p1).to_tuple()
         if not no_touching_rule:
             index_range = range(0, 3 * length + 1)
         else:
@@ -306,6 +278,26 @@ class Segment(GameLink):
             GridCoordinates(empty_dot.x // 3,
                             empty_dot.y // 3))  # use dot.to_grid_coordinates() instead (to be implemented)
         self.grid_action.add_line(p1, p2)
+
+
+################################################
+
+class Cross(GameLink):
+
+    def __init__(self):
+        super().__init__()
+        self.grid_action.dots = [
+            GridCoordinates(3, 0), GridCoordinates(4, 0), GridCoordinates(5, 0), GridCoordinates(6, 0),
+            GridCoordinates(3, 1), GridCoordinates(6, 1), GridCoordinates(3, 2), GridCoordinates(6, 2),
+            GridCoordinates(0, 3), GridCoordinates(1, 3), GridCoordinates(2, 3), GridCoordinates(3, 3),
+            GridCoordinates(6, 3), GridCoordinates(7, 3), GridCoordinates(8, 3), GridCoordinates(9, 3),
+            GridCoordinates(0, 4), GridCoordinates(9, 4), GridCoordinates(0, 5), GridCoordinates(9, 5),
+            GridCoordinates(0, 6), GridCoordinates(1, 6), GridCoordinates(2, 6), GridCoordinates(3, 6),
+            GridCoordinates(6, 6), GridCoordinates(7, 6), GridCoordinates(8, 6), GridCoordinates(9, 6),
+            GridCoordinates(3, 7), GridCoordinates(6, 7), GridCoordinates(3, 8), GridCoordinates(6, 8),
+            GridCoordinates(3, 9), GridCoordinates(4, 9), GridCoordinates(5, 9), GridCoordinates(6, 9)]
+        for dot in self.grid_action.dots:
+            self.image_action.pixels.append(ImageCoordinates(dot))
 
 
 ################################################
@@ -391,7 +383,7 @@ class SvgImage:
 
 def command_line_game() -> None:
     image = Image(GridCoordinates(12, 12), GridCoordinates(1, 1))
-    image.add_points(CrossGridAction().dots)
+    image.add(Cross().image_action)
     score = 0
     image.print()
     while True:
@@ -404,16 +396,15 @@ def command_line_game() -> None:
         y2 = int(input('              y:  '))
         try:
             segment = Segment(GridCoordinates(x1, y1), GridCoordinates(x2, y2), 4, False, image)
-        except:
-            print('!!! This is not a valid segment !!!')
+        except Exception as e:
+            print('This is not a valid segment:', e)
         else:
             image.add(segment.image_action)
             score += 1
             print()
             image.print()
             print()
-            print('Score:', score)0
-
+            print('Score:', score)
 
 
 ################################################
