@@ -235,8 +235,8 @@ class Grid:
         self.actions = []
 
     def to_svg(self, image: Image,
-               unit_cell_width: int = 40,
-               grid_style: str = "stroke:rgb(127,127,127);stroke-width:1") -> List[str]:
+               unit_cell_width: int = 20,
+               grid_style: str = "stroke:rgb(127,127,127);stroke-width:0.05") -> List[str]:
         svg = []
         w, h = image.dimensions.to_grid_coordinates().to_tuple()
         x, y = image.origin.to_grid_coordinates().to_tuple()
@@ -252,10 +252,10 @@ class Grid:
         ))
         for i in range(w):
             svg.append((f'\t<line x1="{i - x}" y1="{ymin:.1f}" x2="{i - x}" y2="{ymax:.1f}" '
-                        f'style="{grid_style}">'))
+                        f'style="{grid_style}"/>'))
         for i in range(h):
             svg.append((f'\t<line x1="{xmin:.1f}" y1="{i - y}" x2="{xmax:.1f}" y2="{i - y}" '
-                        f'style="{grid_style}">'))
+                        f'style="{grid_style}"/>'))
         svg.append('</svg>')
         return svg
 
