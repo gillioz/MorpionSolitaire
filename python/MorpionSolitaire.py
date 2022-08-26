@@ -55,28 +55,45 @@ class ImageAction:
 
 ################################################
 
-class GridAction:
-    dots: List[GridCoordinates]
+class GridElement:
+
+    pass
+
+################################################
+
+class GridDot(GridElement):
+    dot: GridCoordinates
+
+    def __init__(self, pt: GridCoordinates) -> None:
+        self.dot = pt
+
+################################################
+
+class GridLine(GridElement):
     line: List[GridCoordinates]
 
+    def __init__(self, p1: GridCoordinates, p2: GridCoordinates) -> None:
+        self.line = [p1, p2]
+
+
+################################################
+
+class GridAction:
+    elements: List[GridElement]
+
     def __init__(self):
-        self.dots = []
-        self.line = []
+        self.elements = []
 
-    def add_line(self, p1: GridCoordinates, p2: GridCoordinates) -> None:
-        self.line.append(p1)
-        self.line.append(p2)
+    def add(self, element: GridElement):
+        self.elements.append(element)
 
-    def add_dot(self, p: GridCoordinates) -> None:
-        self.dots.append(p)
-
-    def to_json(self) -> json:
-        element_dictionary = {}
-        if len(self.dots) > 0:
-            element_dictionary['dots'] = [point.to_tuple() for point in self.dots]
-        if len(self.line) > 0:
-            element_dictionary['line'] = [point.to_tuple() for point in self.line]
-        return json.dumps(element_dictionary)
+    # def to_json(self) -> json:
+    #     element_dictionary = {}
+    #     if len(self.dots) > 0:
+    #         element_dictionary['dots'] = [point.to_tuple() for point in self.dots]
+    #     if len(self.line) > 0:
+    #         element_dictionary['line'] = [point.to_tuple() for point in self.line]
+    #     return json.dumps(element_dictionary)
 
 
 ################################################
@@ -299,10 +316,8 @@ class Segment(GameAction):
         for pt in pixels:
             if not pt.is_dot():
                 self.image_action.pixels.append(pt)
-        self.grid_action.add_dot(
-            GridCoordinates(empty_dot.x // 3,
-                            empty_dot.y // 3))  # use dot.to_grid_coordinates() instead (to be implemented)
-        self.grid_action.add_line(p1, p2)
+        self.grid_action.add(GridDot(empty_dot.to_grid_coordinates()))
+        self.grid_action.add(GridLine(p1, p2))
 
 
 ################################################
@@ -467,22 +482,20 @@ def tests() -> None:
 # MAIN
 if __name__ == '__main__':
     tests()
-    # command_line_game()
-    image = Image(dimensions=GridCoordinates(20, 20),
-                  origin=GridCoordinates(5, 5))
-    image = Image(dimensions=GridCoordinates(6, 6),
-                  origin=GridCoordinates(1, 2))
-    grid = Grid()
-    html = grid.to_svg(image)
-    for line in html:
-        print(line)
-    with open('drawing.html', 'w') as f:
-        f.write('<html>\n')
-        f.write('<body>\n')
-        # f.write('<h1>Title</h1>\n')
-        for line in html:
-            f.write('\t' + line + '\n')
-        f.write('</body>\n')
-        f.write('</html>\n')
-    # output = SvgImage(my_grid)
-    # output.save('drawing.html')
+    command_line_game()
+    # image = Image(dimensions=GridCoordinates(20, 20),
+    #               origin=GridCoordinates(5, 5))
+    # image = Image(dimensions=GridCoordinates(6, 6),
+    #               origin=GridCoordinates(1, 2))
+    # grid = Grid()
+    # html = grid.to_svg(image)
+    # for line in html:
+    #     print(line)
+    # with open('drawing.html', 'w') as f:
+    #     f.write('<html>\n')
+    #     f.write('<body>\n')
+    #     # f.write('<h1>Title</h1>\n')
+    #     for line in html:
+    #         f.write('\t' + line + '\n')
+    #     f.write('</body>\n')
+    #     f.write('</html>\n')
