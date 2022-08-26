@@ -91,14 +91,6 @@ class GameAction:
 
 
 ################################################
-class Grid:
-    actions: List[GridAction]
-
-    def __init__(self) -> None:
-        self.actions = []
-
-
-################################################
 
 class Image:
     dimensions: ImageCoordinates
@@ -233,6 +225,39 @@ class Image:
 
     def remove(self, action: ImageAction) -> None:
         self.apply(action, False)
+
+
+################################################
+class Grid:
+    actions: List[GridAction]
+
+    def __init__(self) -> None:
+        self.actions = []
+
+    def to_svg(self, image: Image,
+               unit_cell_width: int = 20,
+               grid_style: str = "stroke:rgb(127,127,127);stroke-width:0.05") -> List[str]:
+        svg = []
+        w, h = image.dimensions.to_grid_coordinates().to_tuple()
+        x, y = image.origin.to_grid_coordinates().to_tuple()
+        w += 1
+        h += 1
+        xmin = -0.5 - x
+        ymin = -0.5 - y
+        xmax = xmin + w
+        ymax = ymin + h
+        svg.append((
+            f'<svg width="{unit_cell_width * w:d}" height="{unit_cell_width * h:d}" '
+            f'viewbox="{xmin:.1f} {ymin:.1f} {w} {h}">'
+        ))
+        for i in range(w):
+            svg.append((f'\t<line x1="{i - x}" y1="{ymin:.1f}" x2="{i - x}" y2="{ymax:.1f}" '
+                        f'style="{grid_style}"/>'))
+        for i in range(h):
+            svg.append((f'\t<line x1="{xmin:.1f}" y1="{i - y}" x2="{xmax:.1f}" y2="{i - y}" '
+                        f'style="{grid_style}"/>'))
+        svg.append('</svg>')
+        return svg
 
 
 ################################################
@@ -442,6 +467,22 @@ def tests() -> None:
 # MAIN
 if __name__ == '__main__':
     tests()
-    command_line_game()
+    # command_line_game()
+    image = Image(dimensions=GridCoordinates(20, 20),
+                  origin=GridCoordinates(5, 5))
+    image = Image(dimensions=GridCoordinates(6, 6),
+                  origin=GridCoordinates(1, 2))
+    grid = Grid()
+    html = grid.to_svg(image)
+    for line in html:
+        print(line)
+    with open('drawing.html', 'w') as f:
+        f.write('<html>\n')
+        f.write('<body>\n')
+        # f.write('<h1>Title</h1>\n')
+        for line in html:
+            f.write('\t' + line + '\n')
+        f.write('</body>\n')
+        f.write('</html>\n')
     # output = SvgImage(my_grid)
     # output.save('drawing.html')
