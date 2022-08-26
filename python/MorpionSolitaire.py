@@ -81,7 +81,7 @@ class GridAction:
 
 ################################################
 
-class GameLink:
+class GameAction:
     grid_action: GridAction
     image_action: ImageAction
 
@@ -237,13 +237,13 @@ class Image:
 
 ################################################
 
-class Segment(GameLink):
+class Segment(GameAction):
     def __init__(self, p1: GridCoordinates, p2: GridCoordinates,
                  length: int, no_touching_rule: bool,
                  image: Image) -> None:
         if length == 0:
             raise Exception('Invalid segment length: 0')
-        GameLink.__init__(self)
+        GameAction.__init__(self)
         w = p2.x - p1.x
         h = p2.y - p1.y
         if ((w != 0) and (abs(w) != length)) or ((h != 0) and (abs(h) != length)) or ((w == 0) and (h == 0)):
@@ -282,7 +282,7 @@ class Segment(GameLink):
 
 ################################################
 
-class Cross(GameLink):
+class Cross(GameAction):
 
     def __init__(self):
         super().__init__()
@@ -302,6 +302,23 @@ class Cross(GameLink):
 
 ################################################
 
+class Game:
+    grid: Grid
+    image: Image
+
+    pass
+
+
+################################################
+################################################
+
+class GameLink(GameAction):
+
+    pass
+
+
+################################################
+
 class GameNode:
     root: GameLink
     branches: List[GameLink]
@@ -310,9 +327,8 @@ class GameNode:
 
 
 ################################################
-class Game:
-    grid: Grid
-    image: Image
+class GameGraph:
+    game: Game
     length: int
     index: int
     nodes: List[GameNode]  # can it be inherited instead?
@@ -321,8 +337,8 @@ class Game:
                  dimensions: GridCoordinates = GridCoordinates(20, 20),
                  origin: GridCoordinates = GridCoordinates(5, 5)
                  ):
-        self.grid = Grid()
-        self.image = Image(dimensions, origin)
+        self.game.grid = Grid()
+        self.game.image = Image(dimensions, origin)
         self.length = 0  # eventually 1
         self.index = 0
         self.nodes = []  # eventually a starting configuration
@@ -331,6 +347,7 @@ class Game:
         pass
 
 
+################################################
 ################################################
 
 class SvgImage:
