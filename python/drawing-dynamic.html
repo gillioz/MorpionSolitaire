@@ -1,28 +1,105 @@
 <html>
 <body>
-	<svg id="grid" width="280" height="280" viewbox="-1.5 -2.5 7 7">
-		<line x1="-1" y1="-2.5" x2="-1" y2="4.5" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="0" y1="-2.5" x2="0" y2="4.5" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="1" y1="-2.5" x2="1" y2="4.5" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="2" y1="-2.5" x2="2" y2="4.5" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="3" y1="-2.5" x2="3" y2="4.5" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="4" y1="-2.5" x2="4" y2="4.5" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="5" y1="-2.5" x2="5" y2="4.5" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="-1.5" y1="-2" x2="5.5" y2="-2" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="-1.5" y1="-1" x2="5.5" y2="-1" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="-1.5" y1="0" x2="5.5" y2="0" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="-1.5" y1="1" x2="5.5" y2="1" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="-1.5" y1="2" x2="5.5" y2="2" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="-1.5" y1="3" x2="5.5" y2="3" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<line x1="-1.5" y1="4" x2="5.5" y2="4" style="stroke:rgb(127,127,127);stroke-width:0.1"/>
-		<circle id="mousetracker" cx="0" cy="0" r="0.2" fill="red" />
+	<svg id="grid" width="400" height="200" viewBox="0 0 1 1">
 	</svg>
 
+	<div id="log"></div>
+
 	<script>
-		document.getElementById('grid').addEventListener('mousemove', function yo(u) {
-			document.getElementById("mousetracker").setAttribute("cx", Math.floor(u.offsetX / 40) - 1)
-			document.getElementById("mousetracker").setAttribute("cy", Math.floor(u.offsetY / 40) - 2)
+		var pixelPerUnit = 25;
+		var width = 20;
+		var height = 16;
+		var x0 = 5;
+		var y0 = 3;
+
+		var xmin = -0.5 - x0;
+		var xmax = xmin + width + 1;
+		var ymin = -0.5 - y0;
+		var ymax = ymin + height + 1;
+
+		var svgnamespace = 'http://www.w3.org/2000/svg';
+
+		var svg = document.getElementById('grid');
+		svg.setAttribute('width', (width + 1) * pixelPerUnit);
+		svg.setAttribute('height', (height + 1) * pixelPerUnit);
+		svg.setAttribute('viewBox', `${xmin} ${ymin} ${width + 1} ${height + 1}`);
+
+		const gridstyle = 'stroke:rgb(191,191,191);stroke-width:0.1';
+		const hline = [];
+		for (let i = 0; i < height + 1; i++) {
+			hline[i] = document.createElementNS(svgnamespace, 'line');
+			hline[i].setAttribute('x1', xmin);
+			hline[i].setAttribute('x2', xmax);
+			hline[i].setAttribute('y1', i - y0);
+			hline[i].setAttribute('y2', i - y0);
+			hline[i].setAttribute('style', gridstyle);
+			svg.appendChild(hline[i]);
+		}
+		const vline = [];
+		for (let i = 0; i < width + 1; i++) {
+			vline[i] = document.createElementNS(svgnamespace, 'line');
+			vline[i].setAttribute('x1', i - x0);
+			vline[i].setAttribute('x2', i - x0);
+			vline[i].setAttribute('y1', ymin);
+			vline[i].setAttribute('y2', ymax);
+			vline[i].setAttribute('style', gridstyle);
+			svg.appendChild(vline[i]);
+		}
+
+		var log = document.getElementById('log');
+		var p = document.createElement('p');
+		log.appendChild(p);
+
+		var mousetracker = document.createElementNS(svgnamespace, 'circle');
+		mousetracker.setAttribute('r', 0.2);
+		mousetracker.setAttribute('fill', 'blue');
+		mousetracker.setAttribute('cx', 0);
+		mousetracker.setAttribute('cy', 0);
+
+		var mouseclick = document.createElementNS(svgnamespace, 'circle');
+		mouseclick.setAttribute('r', 0.2);
+		mouseclick.setAttribute('fill', 'blue');
+		mouseclick.setAttribute('cx', 0);
+		mouseclick.setAttribute('cy', 0);
+
+		var dragline = document.createElementNS(svgnamespace, 'line');
+		dragline.setAttribute('style', 'stroke:blue;stroke-width:0.1');
+
+		var mouse_x = 0;
+		var mouse_y = 0;
+		var click_x = 0;
+		var click_y = 0;
+
+		svg.addEventListener('mousemove', function(o) {
+			mouse_x = Math.floor(o.offsetX / pixelPerUnit) - x0;
+			mouse_y = Math.floor(o.offsetY / pixelPerUnit) - y0;
+		 	mousetracker.setAttribute('cx', mouse_x);
+		 	mousetracker.setAttribute('cy', mouse_y);
+		 	dragline.setAttribute('x2', mouse_x);
+		 	dragline.setAttribute('y2', mouse_y);
 		});
+		svg.addEventListener('mouseover', function() {
+			svg.appendChild(mousetracker);
+		});
+		svg.addEventListener('mouseout', function() {
+			svg.removeChild(mousetracker);
+		});
+		svg.addEventListener('mousedown', function() {
+			click_x = mouse_x;
+			click_y = mouse_y;
+		 	mouseclick.setAttribute('cx', click_x);
+		 	mouseclick.setAttribute('cy', click_y);
+		 	dragline.setAttribute('x1', click_x);
+		 	dragline.setAttribute('y1', click_y);
+			svg.appendChild(mouseclick);
+			svg.appendChild(dragline);
+		});
+		svg.addEventListener('mouseup', function() {
+			svg.removeChild(mouseclick);
+			svg.removeChild(dragline);
+			p.innerHTML = `(${click_x}, ${click_y}) <-> (${mouse_x}, ${mouse_y})`;
+		});
+
 	</script>
 
 </body>
