@@ -1,0 +1,79 @@
+﻿@page
+@using System.Security.AccessControl
+@using MorpionSolitaire
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+	<h1 class="display-4">Welcome</h1>
+	<div id="gridcontainer">@Html.Raw(Model.GridSvg)</div>
+	<p id="debug">@Model.DebugText</p>
+	@section scripts{
+		<script>
+		const pixelPerUnit = @(SvgDocument.PixelsPerUnit);
+		const width = @(Model.SvgDoc.Width);
+		const height = @(Model.SvgDoc.Height);
+		const minX = @(Model.SvgDoc.MinX);
+		const minY = @(Model.SvgDoc.MinY);
+
+		const svgnamespace = 'http://www.w3.org/2000/svg';
+
+		let svg = document.getElementById('grid');
+		let svgcontainer = document.getElementById('gridcontainer');
+		let debug = document.getElementById('debug');
+
+		let mousetracker = document.createElementNS(svgnamespace, 'circle');
+		mousetracker.setAttribute('r', 0.2);
+		mousetracker.setAttribute('fill', 'blue');
+		mousetracker.setAttribute('cx', 0);
+		mousetracker.setAttribute('cy', 0);
+
+		let mouseclick = document.createElementNS(svgnamespace, 'circle');
+		mouseclick.setAttribute('r', 0.2);
+		mouseclick.setAttribute('fill', 'blue');
+		mouseclick.setAttribute('cx', 0);
+		mouseclick.setAttribute('cy', 0);
+
+		let dragline = document.createElementNS(svgnamespace, 'line');
+		dragline.setAttribute('style', 'stroke:blue;stroke-width:0.1');
+
+		let mouse_x = 0;
+		let mouse_y = 0;
+		let click_x = 0;
+		let click_y = 0;
+
+		svg.addEventListener('mousemove', function(o) {
+			mouse_x = Math.floor(o.offsetX / pixelPerUnit) + minX;
+			mouse_y = Math.floor(o.offsetY / pixelPerUnit) + minY;
+			mousetracker.setAttribute('cx', mouse_x);
+			mousetracker.setAttribute('cy', mouse_y);
+			dragline.setAttribute('x2', mouse_x);
+			dragline.setAttribute('y2', mouse_y);
+		});
+		svg.addEventListener('mouseover', function() {
+			svg.appendChild(mousetracker);
+		});
+		svg.addEventListener('mouseout', function() {
+			svg.removeChild(mousetracker);
+		});
+		svg.addEventListener('mousedown', function() {
+			click_x = mouse_x;
+			click_y = mouse_y;
+			mouseclick.setAttribute('cx', click_x);
+			mouseclick.setAttribute('cy', click_y);
+			dragline.setAttribute('x1', click_x);
+			dragline.setAttribute('y1', click_y);
+			svg.appendChild(mouseclick);
+			svg.appendChild(dragline);
+		});
+		svg.addEventListener('mouseup', function() {
+			svg.removeChild(mouseclick);
+			svg.removeChild(dragline);
+			let url = `?handler=TrySegment&x1=${mouse_x}&y1=${mouse_y}&x2=${click_x}&y2=${click_y}`;
+			fetch(`?handler=Debug&msg=${mouse_x}`);
+		});
+	</script>
+	}
+</div>
