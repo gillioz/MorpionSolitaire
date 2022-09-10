@@ -1,33 +1,23 @@
-﻿using System.Drawing;
-using GrapeCity.Documents.Svg;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class GridDot : GridElement
 {
-    public GridCoordinates Dot { get; }
-
-    private const float SvgCircleRadius = (float)0.15;
+    public GridCoordinates Pt { get; }
 
     public GridDot(GridCoordinates pt)
     {
-        Dot = pt;
+        Pt = pt;
     }
 
     public override void ComputeFootprint(GridFootprint footprint)
     {
-        footprint.Add(Dot);
+        footprint.Add(Pt);
     }
 
-    public override void AddToSvgDoc(SvgDocument svgDoc)
+    public override string ToSvg(string color)
     {
-        var circle = new SvgCircleElement()
-        {
-            CenterX = new SvgLength(Dot.X),
-            CenterY = new SvgLength(Dot.Y),
-            Radius = new SvgLength(SvgCircleRadius),
-            Fill = new SvgPaint(Color.Black)
-        };
-        svgDoc.Document.RootSvg.Children.Add(circle);
+        return $"<circle cx=\"{Pt.X}\" cy=\"{Pt.Y}\" " +
+               $"r=\"0.15\" fill=\"{color}\" />";
     }
+
 }

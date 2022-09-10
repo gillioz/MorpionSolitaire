@@ -165,12 +165,16 @@ public class Image
     {
         Apply(action, false);
     }
-    
-    public void SetSvgDimensions(SvgDocument svgDocument)
+
+    public GridFootprint GetFootprint()
     {
         var dimensions = _dimensions.ToGridCoordinates();
         var origin = _origin.ToGridCoordinates();
-        svgDocument.SetDimensions(dimensions.X, dimensions.Y, 
-            -1 * origin.X, -1 * origin.Y);
+        var footprint = new GridFootprint();
+        footprint.Xmin = -1 * origin.X;
+        footprint.Ymin = -1 * origin.Y;
+        footprint.Xmax = dimensions.X - origin.X;
+        footprint.Ymax = dimensions.Y - origin.Y;
+        return footprint;
     }
 }

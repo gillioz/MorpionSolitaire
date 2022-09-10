@@ -8,15 +8,17 @@
 
 <div class="text-center">
 	<h1 class="display-4">Welcome</h1>
-	<div id="gridcontainer">@Html.Raw(Model.GridSvg)</div>
+	<div id="gridcontainer">
+@Html.Raw(Model.Game.Grid.ToSvg("grid", Model.Game.Image, "\t\t"))
+	</div>
 	<p id="debug">@Model.DebugText</p>
 	@section scripts{
 		<script>
-		const pixelPerUnit = @(SvgDocument.PixelsPerUnit);
-		const width = @(Model.SvgDoc.Width);
-		const height = @(Model.SvgDoc.Height);
-		const minX = @(Model.SvgDoc.MinX);
-		const minY = @(Model.SvgDoc.MinY);
+		const pixelPerUnit = @Grid.PixelsPerUnit;
+		const width = 20;
+		const height = 20;
+		const minX = -8;
+		const minY = -8;
 
 		const svgnamespace = 'http://www.w3.org/2000/svg';
 

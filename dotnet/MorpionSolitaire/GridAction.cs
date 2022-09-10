@@ -1,6 +1,4 @@
-﻿using GrapeCity.Documents.Svg;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class GridAction
 {
@@ -24,11 +22,19 @@ public class GridAction
         }
     }
 
-    public void AddToSvgDoc(SvgDocument svgDoc)
-    {
+    public string ToSvg(string? id = null, string prefix = "", string color = "black")
+    {;
+        var result = prefix + "<g";
+        if (id is not null)
+        {
+            result += $" id=\"{id}\"";
+        }
+        result += ">\n";
         foreach (var element in Elements)
         {
-            element.AddToSvgDoc(svgDoc);
+            result += prefix + "\t" + element.ToSvg(color) + "\n";
         }
+        result += prefix + "</g>";
+        return result;
     }
 }
