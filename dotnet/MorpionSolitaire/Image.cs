@@ -165,7 +165,7 @@ public class Image
     {
         Apply(action, false);
     }
-
+    
     public GridFootprint GetFootprint()
     {
         var dimensions = _dimensions.ToGridCoordinates();

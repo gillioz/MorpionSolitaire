@@ -22,9 +22,9 @@ public class GridAction
         }
     }
 
-    public string ToSvg(string? id = null, string prefix = "", string color = "black")
+    public string ToSvg(string? id = null, string spacing = "", string color = "black")
     {;
-        var result = prefix + "<g";
+        var result = spacing + "<g";
         if (id is not null)
         {
             result += $" id=\"{id}\"";
@@ -32,9 +32,9 @@ public class GridAction
         result += ">\n";
         foreach (var element in Elements)
         {
-            result += prefix + "\t" + element.ToSvg(color) + "\n";
+            result += spacing + "\t" + element.ToSvg(color) + "\n";
         }
-        result += prefix + "</g>";
+        result += spacing + "</g>";
         return result;
     }
 }

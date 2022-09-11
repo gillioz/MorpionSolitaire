@@ -8,74 +8,100 @@
 
 <div class="text-center">
 	<h1 class="display-4">Welcome</h1>
-	<div id="gridcontainer">
-@Html.Raw(Model.Game.Grid.ToSvg("grid", Model.Game.Image, "\t\t"))
+	<div id="grid-container">
+		@Html.Raw(Model.GridString())
 	</div>
-	<p id="debug">@Model.DebugText</p>
-	@section scripts{
-		<script>
-		const pixelPerUnit = @Grid.PixelsPerUnit;
-		const width = 20;
-		const height = 20;
-		const minX = -8;
-		const minY = -8;
-
-		const svgnamespace = 'http://www.w3.org/2000/svg';
-
-		let svg = document.getElementById('grid');
-		let svgcontainer = document.getElementById('gridcontainer');
+	<p>
+		<button type="button">Undo last move</button>
+		<button type="button">Restart</button>
+		<br/>
+		<button type="button" onclick="play()">Play at random</button>
+	</p>
+	<p id="debug">Startup</p>
+	<g id="mouse-group">
+		<circle id="mouse-pt1" cx="0" cy="0" r="0.2" fill="blue" />
+		<circle id="mouse-pt2" cx="0" cy="0" r="0.2" fill="blue" />
+		<line id="mouse-line" x1="0" y1="0" x2="0" y2="0" style="stroke:blue;stroke-width:0.15" />
+	</g>
+	
+	<script>
 		let debug = document.getElementById('debug');
+		
+		function play() {
+			debug.innerText = 'before request';
+			$.ajax({ 
+				url: '?handler=Debug',
+				success: function(){
+					debug.innerText = 'success';
+				}
+			});
+		}
+		
+		function show_grid() {
+			grid_container.innerText = @Html.Raw(Model.GridString())
+		}
+		
+		function add_segment() {
+			let url = `?handler=TrySegment&x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`;
+            debug.innerText = url;
+		}
+		
+		const pixelPerUnit = @Grid.PixelsPerUnit;
+		const minX = @Model.Xmin;
+		const minY = @Model.Ymin;
 
-		let mousetracker = document.createElementNS(svgnamespace, 'circle');
-		mousetracker.setAttribute('r', 0.2);
-		mousetracker.setAttribute('fill', 'blue');
-		mousetracker.setAttribute('cx', 0);
-		mousetracker.setAttribute('cy', 0);
+		let svg_grid = document.getElementById('grid');
+		let mouse_group = document.getElementById('mouse-group');
+		let mouse_pt1 = document.getElementById('mouse-pt1');
+		let mouse_pt2 = document.getElementById('mouse-pt2');
+		let mouse_line = document.getElementById('mouse-line');
+		
 
-		let mouseclick = document.createElementNS(svgnamespace, 'circle');
-		mouseclick.setAttribute('r', 0.2);
-		mouseclick.setAttribute('fill', 'blue');
-		mouseclick.setAttribute('cx', 0);
-		mouseclick.setAttribute('cy', 0);
-
-		let dragline = document.createElementNS(svgnamespace, 'line');
-		dragline.setAttribute('style', 'stroke:blue;stroke-width:0.1');
-
-		let mouse_x = 0;
-		let mouse_y = 0;
-		let click_x = 0;
-		let click_y = 0;
-
-		svg.addEventListener('mousemove', function(o) {
-			mouse_x = Math.floor(o.offsetX / pixelPerUnit) + minX;
-			mouse_y = Math.floor(o.offsetY / pixelPerUnit) + minY;
-			mousetracker.setAttribute('cx', mouse_x);
-			mousetracker.setAttribute('cy', mouse_y);
-			dragline.setAttribute('x2', mouse_x);
-			dragline.setAttribute('y2', mouse_y);
+		document.removeChild(mouse_group);
+		
+		let mouse_click = false;
+		let x1 = 0;
+		let x2 = 0;
+		let y1 = 0;
+		let y2 = 0;
+		
+		svg_grid.addEventListener('click', function (mouse) {
+			if (mouse_click) {
+				add_segment();
+				mouse_click = false;
+				svg_grid.removeChild(mouse_group);
+			}
+			else {
+				x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
+				y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
+				mouse_pt1.setAttribute('cx', x1);
+				mouse_pt1.setAttribute('cy', y1);
+				mouse_pt2.setAttribute('cx', x1);
+				mouse_pt2.setAttribute('cy', y1);
+				mouse_line.setAttribute('x1', x1);
+				mouse_line.setAttribute('y1', y1);
+				mouse_line.setAttribute('x2', x1);
+				mouse_line.setAttribute('y2', y1);
+				mouse_click = true;
+				svg_grid.appendChild(mouse_group);
+			}
 		});
-		svg.addEventListener('mouseover', function() {
-			svg.appendChild(mousetracker);
+		svg_grid.addEventListener('mousemove', function (mouse) {
+			if (mouse_click) {
+				x2 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
+                y2 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
+				mouse_pt2.setAttribute('cx', x2);
+				mouse_pt2.setAttribute('cy', y2);
+				mouse_line.setAttribute('x2', x2);
+				mouse_line.setAttribute('y2', y2);
+			}
 		});
-		svg.addEventListener('mouseout', function() {
-			svg.removeChild(mousetracker);
+		svg_grid.addEventListener('mouseout', function() {
+			if (mouse_click){
+				mouse_click = false;
+				svg_grid.removeChild(mouse_group);
+			}
 		});
-		svg.addEventListener('mousedown', function() {
-			click_x = mouse_x;
-			click_y = mouse_y;
-			mouseclick.setAttribute('cx', click_x);
-			mouseclick.setAttribute('cy', click_y);
-			dragline.setAttribute('x1', click_x);
-			dragline.setAttribute('y1', click_y);
-			svg.appendChild(mouseclick);
-			svg.appendChild(dragline);
-		});
-		svg.addEventListener('mouseup', function() {
-			svg.removeChild(mouseclick);
-			svg.removeChild(dragline);
-			let url = `?handler=TrySegment&x1=${mouse_x}&y1=${mouse_y}&x2=${click_x}&y2=${click_y}`;
-			fetch(`?handler=Debug&msg=${mouse_x}`);
-		});
+		
 	</script>
-	}
 </div>

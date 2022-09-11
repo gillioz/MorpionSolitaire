@@ -31,7 +31,7 @@ public class Grid
         return footprint;
     }
 
-    public string ToSvg(string? id = null, Image? image = null, string prefix = "")
+    public string ToSvg(string? id = null, Image? image = null, string spacing = "")
     {
         var footprint = (image is null) ? GetFootprint() : image.GetFootprint();
         var width = footprint.Xmax - footprint.Xmin + 1;
@@ -42,7 +42,7 @@ public class Grid
         var maxY = footprint.Ymax + 0.5;
         var viewBox = $"{minX:F1} {minY:F1} {width} {height}";
 
-        var result = prefix + "<svg ";
+        var result = spacing + "<svg ";
         if (id is not null)
         {
             result += $"id=\"{id}\" ";
@@ -51,12 +51,12 @@ public class Grid
                   $"height=\"{PixelsPerUnit * height}\" " +
                   $"viewbox=\"{viewBox}\">\n";
 
-        result += prefix + "\t<g id=\"background\">\n";
+        result += spacing + "\t<g id=\"grid-background\">\n";
         var gridstyle = "stroke:lightgray;stroke-width:0.05";
         for (int i = 0; i < width; i++)
         {
             var x = footprint.Xmin + i;
-            result += prefix + 
+            result += spacing + 
                       $"\t\t<line x1=\"{x}\" y1=\"{minY}\" " +
                       $"x2=\"{x}\" y2=\"{maxY}\" " +
                       $"style=\"{gridstyle}\" />\n";
@@ -64,19 +64,19 @@ public class Grid
         for (int i = 0; i < height; i++)
         {
             var y = footprint.Ymin + i;
-            result += prefix + 
+            result += spacing + 
                       $"\t\t<line x1=\"{minX}\" y1=\"{y}\" " +
                       $"x2=\"{maxX}\" y2=\"{y}\" " +
                       $"style=\"{gridstyle}\" />\n";
         }
-        result += prefix + "\t</g>\n";
+        result += spacing + "\t</g>\n";
         
         for (int i = 0; i < Actions.Count; i++)
         {
-            result += Actions[i].ToSvg($"grid-action-{i}", prefix + "\t") + "\n";
+            result += Actions[i].ToSvg($"grid-action-{i}", spacing + "\t") + "\n";
         }
         
-        result += prefix + "</svg>";
+        result += spacing + "</svg>";
         return result;
     }
 }

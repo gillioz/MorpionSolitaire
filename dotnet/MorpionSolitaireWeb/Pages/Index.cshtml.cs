@@ -11,14 +11,21 @@ public class IndexModel : PageModel
 
     public string GridSvg;
     public Game Game { get; set; }
-    public string DebugText { get; set; }
+    public int Xmin { get; set; }
+    public int Xmax { get; set; }
+    public int Ymin { get; set; }
+    public int Ymax { get; set; }
 
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
         GridSvg = string.Empty;
         Game = new Game();
-        DebugText = "application startup";
+        var footprint = Game.Image.GetFootprint();
+        Xmin = footprint.Xmin;
+        Xmax = footprint.Xmax;
+        Ymin = footprint.Ymin;
+        Ymax = footprint.Ymax;
     }
 
     public void OnGet()
@@ -28,19 +35,20 @@ public class IndexModel : PageModel
 
         // Game.Grid.ToSvg("grid");
         Game.Grid.ToSvg("grid", Game.Image);
-
-        DebugText = "OnGet";
     }
 
     public void OnGetTrySegment(int x1, int y1, int x2, int y2)
     {
         Game.TrySegment(new GridCoordinates(0, 4), new GridCoordinates(4, 0));
-
-        DebugText = "OnGetTrySegment";
     }
     
-    public void OnGetDebug(string msg)
+    public void OnGetDebug()
     {
         Game.TrySegment(new GridCoordinates(0, 4), new GridCoordinates(4, 0));
-        DebugText = "OnGetDebug"; 
-    }}
+    }
+
+    public string GridString()
+    {
+        return Game.Grid.ToSvg("grid", Game.Image, "\t\t");
+    }
+}

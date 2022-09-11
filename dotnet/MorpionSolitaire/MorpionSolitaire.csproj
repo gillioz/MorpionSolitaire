@@ -6,8 +6,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="GrapeCity.Documents.Imaging" Version="5.2.0.801" />
-    </ItemGroup>
-
 </Project>
