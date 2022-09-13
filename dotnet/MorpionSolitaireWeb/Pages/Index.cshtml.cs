@@ -9,7 +9,6 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
 
-    public string GridSvg;
     public Game Game { get; set; }
     public int Xmin { get; set; }
     public int Xmax { get; set; }
@@ -19,9 +18,10 @@ public class IndexModel : PageModel
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
-        GridSvg = string.Empty;
         Game = new Game();
-        var footprint = Game.Image.GetFootprint();
+        // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 3));
+        // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 7));
+        var footprint = Game.Image.GetFootprint();  
         Xmin = footprint.Xmin;
         Xmax = footprint.Xmax;
         Ymin = footprint.Ymin;
@@ -29,26 +29,34 @@ public class IndexModel : PageModel
     }
 
     public void OnGet()
-    {
-        // Game.TrySegment(new GridCoordinates(0, 4), new GridCoordinates(4, 0));
-        Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 3));
+    {}
 
-        // Game.Grid.ToSvg("grid");
-        Game.Grid.ToSvg("grid", Game.Image);
-    }
-
-    public void OnGetTrySegment(int x1, int y1, int x2, int y2)
+    public IActionResult OnGetTrySegment(string x1, string y1, 
+        string x2, string y2)
     {
-        Game.TrySegment(new GridCoordinates(0, 4), new GridCoordinates(4, 0));
+        var success = Game.TrySegment(new GridCoordinates(int.Parse(x1), int.Parse(y1)), 
+            new GridCoordinates(int.Parse(x2), int.Parse(y2)));
+        if (success)
+        {
+            return new JsonResult(new
+            {
+                action = "add",
+                content = Game.Grid.Actions.Last().ToSvg()
+            });
+        }
+        return new JsonResult(new
+        {
+            action = "none"
+        });
     }
     
-    public void OnGetDebug()
+    public IActionResult OnGetRestart()
     {
-        Game.TrySegment(new GridCoordinates(0, 4), new GridCoordinates(4, 0));
-    }
-
-    public string GridString()
-    {
-        return Game.Grid.ToSvg("grid", Game.Image, "\t\t");
+        Game = new Game();
+        return new JsonResult(new
+        {
+            action = "replace",
+            content = Game.Grid.ToSvg()
+        });
     }
 }

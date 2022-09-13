@@ -7,99 +7,108 @@
 }
 
 <div class="text-center">
-	<h1 class="display-4">Welcome</h1>
-	<div id="grid-container">
-		@Html.Raw(Model.GridString())
+	<div>
+@Html.Raw(Model.Game.ToSvg("grid", "\t\t"))
 	</div>
 	<p>
-		<button type="button">Undo last move</button>
-		<button type="button">Restart</button>
+		<button disabled>Undo last move</button>
+		<button onclick="ajaxRequest('Restart')">Restart</button>
 		<br/>
-		<button type="button" onclick="play()">Play at random</button>
+		<button disabled>Play one move at random</button>
+		<button disabled>Play until the end</button>
 	</p>
-	<p id="debug">Startup</p>
-	<g id="mouse-group">
-		<circle id="mouse-pt1" cx="0" cy="0" r="0.2" fill="blue" />
-		<circle id="mouse-pt2" cx="0" cy="0" r="0.2" fill="blue" />
-		<line id="mouse-line" x1="0" y1="0" x2="0" y2="0" style="stroke:blue;stroke-width:0.15" />
-	</g>
-	
+
 	<script>
-		let debug = document.getElementById('debug');
+		// get the various elements by id
+		let grid = document.getElementById('grid');
+		let background = document.getElementById('grid-background');
 		
-		function play() {
-			debug.innerText = 'before request';
+		// AJAX request
+		function ajaxRequest(handler) {
 			$.ajax({ 
-				url: '?handler=Debug',
-				success: function(){
-					debug.innerText = 'success';
+				url: '?handler=' + handler,
+				success: function (data) {
+					responseHandler(data)
 				}
 			});
 		}
-		
-		function show_grid() {
-			grid_container.innerText = @Html.Raw(Model.GridString())
+		// function to handle AJAX requests' responses
+		function responseHandler(data) {
+			switch(data.action) {
+				case "add":
+					grid.insertAdjacentHTML("beforeend", data.content);
+					break;
+				case "replace":
+					grid.innerHTML = data.content;
+					grid.insertAdjacentElement("afterbegin", background);
+					break;
+				case "remove":
+					document.getElementById(data.content).delete();
+					break;
+				default:
+					
+			}
 		}
 		
-		function add_segment() {
-			let url = `?handler=TrySegment&x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`;
-            debug.innerText = url;
-		}
+		// interactive elements
+		let x1 = @Model.Xmin - 1;
+		let x2 = @Model.Xmin - 1;
+		let y1 = 0;
+		let y2 = 0;
+		grid.insertAdjacentHTML("beforeend", `<line id="interactive-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:blue;stroke-width:0.15" />`);
+		grid.insertAdjacentHTML("beforeend", `<circle id="interactive-pt1" cx="${x1}" cy="${y1}" r="0.2" fill="blue" />`);
+		grid.insertAdjacentHTML("beforeend", `<circle id="interactive-pt2" cx="${x2}" cy="${y2}" r="0.2" fill="blue" />`);
+		let interactiveLine = document.getElementById("interactive-line");
+		let interactivePt1 = document.getElementById("interactive-pt1");
+		let interactivePt2 = document.getElementById("interactive-pt2");
+		// interactivePt1.remove();
+		interactivePt2.remove();
+		interactiveLine.remove();
 		
-		const pixelPerUnit = @Grid.PixelsPerUnit;
+		// mouse event listener
+		let clicked = false;
+		const pixelPerUnit = @Game.PixelsPerUnit;
 		const minX = @Model.Xmin;
 		const minY = @Model.Ymin;
 
-		let svg_grid = document.getElementById('grid');
-		let mouse_group = document.getElementById('mouse-group');
-		let mouse_pt1 = document.getElementById('mouse-pt1');
-		let mouse_pt2 = document.getElementById('mouse-pt2');
-		let mouse_line = document.getElementById('mouse-line');
-		
-
-		document.removeChild(mouse_group);
-		
-		let mouse_click = false;
-		let x1 = 0;
-		let x2 = 0;
-		let y1 = 0;
-		let y2 = 0;
-		
-		svg_grid.addEventListener('click', function (mouse) {
-			if (mouse_click) {
-				add_segment();
-				mouse_click = false;
-				svg_grid.removeChild(mouse_group);
+		grid.addEventListener("mouseenter", function () {
+			grid.insertAdjacentElement("beforeend", interactivePt1);
+		});
+		grid.addEventListener("mouseleave", function () {
+			interactivePt1.remove();
+			if (clicked) {
+				clicked = false;
+				interactiveLine.remove();
+				interactivePt2.remove();
+			}
+		});
+		grid.addEventListener("mousemove", function (mouse) {
+			x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
+            y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
+			interactivePt1.setAttribute('cx', x1);
+			interactivePt1.setAttribute('cy', y1);
+			interactiveLine.setAttribute('x1', x1);
+			interactiveLine.setAttribute('y1', y1);
+		});
+		grid.addEventListener("click", function (mouse) {
+			x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
+            y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
+			if (clicked) {
+				clicked = false;
+				interactivePt2.remove();
+				interactiveLine.remove();
+				ajaxRequest(`TrySegment&x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`);
 			}
 			else {
-				x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
-				y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
-				mouse_pt1.setAttribute('cx', x1);
-				mouse_pt1.setAttribute('cy', y1);
-				mouse_pt2.setAttribute('cx', x1);
-				mouse_pt2.setAttribute('cy', y1);
-				mouse_line.setAttribute('x1', x1);
-				mouse_line.setAttribute('y1', y1);
-				mouse_line.setAttribute('x2', x1);
-				mouse_line.setAttribute('y2', y1);
-				mouse_click = true;
-				svg_grid.appendChild(mouse_group);
-			}
-		});
-		svg_grid.addEventListener('mousemove', function (mouse) {
-			if (mouse_click) {
-				x2 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
-                y2 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
-				mouse_pt2.setAttribute('cx', x2);
-				mouse_pt2.setAttribute('cy', y2);
-				mouse_line.setAttribute('x2', x2);
-				mouse_line.setAttribute('y2', y2);
-			}
-		});
-		svg_grid.addEventListener('mouseout', function() {
-			if (mouse_click){
-				mouse_click = false;
-				svg_grid.removeChild(mouse_group);
+				clicked = true;
+				x2 = x1;
+				y2 = y1;
+				interactiveLine.setAttribute('x2', x2);
+				interactiveLine.setAttribute('y2', y2);
+				interactivePt2.setAttribute('cx', x2);
+				interactivePt2.setAttribute('cy', y2);
+				grid.insertAdjacentElement("beforeend", interactiveLine);
+				grid.insertAdjacentElement("beforeend", interactivePt2);
 			}
 		});
 		
