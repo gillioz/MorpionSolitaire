@@ -16,9 +16,30 @@ public class Image
         _sizeIncrement = 3 * sizeIncrement;
     }
 
-    public Image(Grid grid)
+    public void Load(Grid grid, int length, bool noTouchingRule)
     {
-        throw new NotImplementedException();
+        foreach (var action in grid.Actions)
+        {
+            var gridLines = action.Elements.OfType<GridLine>().ToList();
+            if (gridLines.Count == 1)
+            {
+                var segment = new Segment(this, gridLines.First().Pt1, gridLines.First().Pt2,
+                    length, noTouchingRule);
+                Apply(segment.ImageAction, true);
+            }
+            else if (gridLines.Count == 0)
+            {
+                var gridDots = action.Elements.OfType<GridDot>().ToList();
+                foreach (var gridDot in gridDots)
+                {
+                    Set(new ImageCoordinates(gridDot.Pt), true);
+                }
+            }
+            else
+            {
+                throw new Exception("Impossible to load Image from Grid.");
+            }
+        }
     }
 
     private void InitializeImage()
@@ -159,11 +180,6 @@ public class Image
         {
             Set(pixel, value);
         }
-    }
-
-    public void Undo(ImageAction action)
-    {
-        Apply(action, false);
     }
     
     public GridFootprint GetFootprint()

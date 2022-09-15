@@ -13,11 +13,6 @@ public class Grid
     {
         Actions.Add(action);
     }
-
-    public bool Validate(Segment segment)
-    {
-        throw new NotImplementedException();
-    }
     
     public GridFootprint GetFootprint()
     {
@@ -29,6 +24,22 @@ public class Grid
         return footprint;
     }
 
+    public string ToJson(string spacing = "")
+    {
+        var result = spacing + "[\n";
+        for (int i = 0; i < Actions.Count; i++)
+        {
+            result += spacing + "\t{\n" +
+                      spacing + $"\t\t\"stage\": {i},\n" +
+                      spacing + "\t\t\"actions\":\n" +
+                      Actions[i].ToJson(spacing + "\t\t") + "\n" +
+                      spacing + "\t},\n";
+        }
+        result = result.Remove(result.Length - 2) + "\n";
+        result += spacing + "]";
+        return result;
+    }
+    
     public string ToSvg(string spacing = "")
     {
         var result = string.Empty;
@@ -38,5 +49,10 @@ public class Grid
         }
 
         return result;
+    }
+
+    public int GetScore()
+    {
+        return Actions.Count - 1;
     }
 }

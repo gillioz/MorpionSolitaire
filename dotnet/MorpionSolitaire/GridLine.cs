@@ -16,6 +16,17 @@ public class GridLine : GridElement
         footprint.Add(Pt1);
         footprint.Add(Pt2);
     }
+    
+    public override string ToJson(string spacing = "")
+    {
+        return spacing + "{\n" +
+               spacing + "\t\"type\": \"line\",\n" +
+               spacing + $"\t\"x1\": {Pt1.X},\n" +
+               spacing + $"\t\"y1\": {Pt1.Y},\n" +
+               spacing + $"\t\"x2\": {Pt2.X},\n" +
+               spacing + $"\t\"y2\": {Pt2.Y}\n" +
+               spacing + "}";
+    }
 
     public override string ToSvg(string color)
     {

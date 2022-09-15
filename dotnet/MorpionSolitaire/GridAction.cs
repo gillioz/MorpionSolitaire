@@ -21,6 +21,14 @@ public class GridAction
             element.ComputeFootprint(footprint);
         }
     }
+    
+    public string ToJson(string spacing = "")
+    {
+        var list = Elements.Select(x => x.ToJson(spacing + "\t"));
+        return spacing + "[\n" + 
+               string.Join(",\n", list) + "\n" +
+               spacing + "]";
+    }
 
     public string ToSvg(string? id = null, string spacing = "", string color = "black")
     {;

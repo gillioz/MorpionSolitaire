@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Text;
 using MorpionSolitaire;
 
 namespace MorpionSolitaireWeb.Pages;
@@ -9,15 +8,19 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
 
-    public Game Game { get; set; }
-    public int Xmin { get; set; }
-    public int Xmax { get; set; }
-    public int Ymin { get; set; }
-    public int Ymax { get; set; }
+    public static Game Game { get; set; } = new Game();
+    public int Xmin { get; set; } = 0;
+    public int Xmax { get; set; } = 0;
+    public int Ymin { get; set; } = 0;
+    public int Ymax { get; set; } = 0;
 
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
+    }
+
+    public void OnGet()
+    {
         Game = new Game();
         // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 3));
         // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 7));
@@ -28,35 +31,62 @@ public class IndexModel : PageModel
         Ymax = footprint.Ymax;
     }
 
-    public void OnGet()
-    {}
-
-    public IActionResult OnGetTrySegment(string x1, string y1, 
-        string x2, string y2)
+    public IActionResult OnGetTrySegment(string x1, string y1, string x2, string y2)
     {
         var success = Game.TrySegment(new GridCoordinates(int.Parse(x1), int.Parse(y1)), 
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
-            return new JsonResult(new
-            {
-                action = "add",
-                content = Game.Grid.Actions.Last().ToSvg()
-            });
+            return new Response(Response.ActionType.Add).Value();
         }
-        return new JsonResult(new
-        {
-            action = "none"
-        });
+        return new Response(Response.ActionType.None).Value();
     }
     
     public IActionResult OnGetRestart()
     {
         Game = new Game();
-        return new JsonResult(new
+        return new Response(Response.ActionType.Replace).Value();
+    }
+    
+    public IActionResult OnGetSave()
+    {
+        var json = Game.ToJson();
+        using (StreamWriter outputFile = new StreamWriter("Game-0000.json"))
         {
-            action = "replace",
-            content = Game.Grid.ToSvg()
-        });
+            outputFile.Write(json);
+        }
+        // await File.WriteAllTextAsync("Game-0000.json", json);
+        return new Response(Response.ActionType.None).Value();
+    }
+    
+    private class Response
+    {
+        public string Action { get; }
+        public string Content { get; }
+        public int? Score { get; }
+
+        public Response(ActionType action)
+        {
+            Action = action.ToString();
+            Content = action switch
+            {
+                ActionType.Add => Game.Grid.Actions.Last().ToSvg(),
+                ActionType.Replace => Game.Grid.ToSvg(),
+                _ => String.Empty
+            };
+            Score = (action == ActionType.None) ? null : Game.GetScore();
+        }
+
+        public JsonResult Value()
+        {
+            return new JsonResult(this);
+        }
+
+        public enum ActionType
+        {
+            None,
+            Add,
+            Replace
+        }
     }
 }

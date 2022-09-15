@@ -8,20 +8,32 @@
 
 <div class="text-center">
 	<div>
-@Html.Raw(Model.Game.ToSvg("grid", "\t\t"))
+		@Html.Raw(IndexModel.Game.ToSvg("grid", "\t\t"))
 	</div>
+	<p>Score: <b id="score">0</b></p>
+	<h3>One move</h3>
 	<p>
 		<button disabled>Undo last move</button>
+		<button disabled>Play at random</button>
+	</p>
+	<h3>Many moves</h3>
+	<p>
+		<button onclick="ajaxRequest('Undo')">Undo</button>
+		<button disabled>Play</button>
+	</p>
+	<h3>Game</h3>
+	<p>
 		<button onclick="ajaxRequest('Restart')">Restart</button>
-		<br/>
-		<button disabled>Play one move at random</button>
-		<button disabled>Play until the end</button>
+	</p>
+	<p>
+		<button onclick="ajaxRequest('Save')">Save</button>
 	</p>
 
 	<script>
 		// get the various elements by id
 		let grid = document.getElementById('grid');
 		let background = document.getElementById('grid-background');
+		let score = document.getElementById('score');
 		
 		// AJAX request
 		function ajaxRequest(handler) {
@@ -35,18 +47,21 @@
 		// function to handle AJAX requests' responses
 		function responseHandler(data) {
 			switch(data.action) {
-				case "add":
+				case "Add":
 					grid.insertAdjacentHTML("beforeend", data.content);
 					break;
-				case "replace":
+				case "Replace":
 					grid.innerHTML = data.content;
 					grid.insertAdjacentElement("afterbegin", background);
 					break;
-				case "remove":
+				case "Remove":
 					document.getElementById(data.content).delete();
 					break;
 				default:
 					
+			}
+			if (data.score != null){
+				score.innerText = data.score;
 			}
 		}
 		

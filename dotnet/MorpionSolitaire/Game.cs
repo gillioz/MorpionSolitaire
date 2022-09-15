@@ -42,6 +42,23 @@ public class Game
         return false;
     }
 
+    public int GetScore()
+    {
+        return Grid.GetScore();
+    }
+
+    public string ToJson()
+    {
+        return "{\n" +
+               "\t\"title\": \"Morpion Solitaire\",\n" +
+               "\t\"version\": \"v1\",\n" +
+               $"\t\"segment_length\": {SegmentLength},\n" +
+               $"\t\"no_touching\": \"{NoTouchingRule.ToString()}\",\n" +
+               "\t\"grid\":\n"
+               + Grid.ToJson("\t") + "\n" +
+               "}";
+    }
+    
     public string ToSvg(string? id = null, string spacing = "", bool crop = false)
     {
         var footprint = (crop) ? Grid.GetFootprint() : Image.GetFootprint();
