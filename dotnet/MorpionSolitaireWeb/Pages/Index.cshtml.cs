@@ -22,6 +22,7 @@ public class IndexModel : PageModel
     public void OnGet()
     {
         Game = new Game();
+        // Game = Game.Load("Game-0000.json");
         // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 3));
         // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 7));
         var footprint = Game.Image.GetFootprint();  
@@ -50,15 +51,10 @@ public class IndexModel : PageModel
     
     public IActionResult OnGetSave()
     {
-        var json = Game.ToJson();
-        using (StreamWriter outputFile = new StreamWriter("Game-0000.json"))
-        {
-            outputFile.Write(json);
-        }
-        // await File.WriteAllTextAsync("Game-0000.json", json);
+        Game.Save("Game-0000.json");
         return new Response(Response.ActionType.None).Value();
     }
-    
+
     private class Response
     {
         public string Action { get; }

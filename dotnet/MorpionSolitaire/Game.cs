@@ -1,4 +1,6 @@
-﻿namespace MorpionSolitaire;
+﻿using System.Text.Json;
+
+namespace MorpionSolitaire;
 
 public class Game
 {
@@ -9,15 +11,22 @@ public class Game
     
     public const int PixelsPerUnit = 20;
 
-    public Game()
+    public Game(int segmentLength = 4, bool noTouchingRule = false, Grid? grid = null)
     {
         Grid = new Grid();
         Image = new Image(dimensions: new GridCoordinates(24, 24),
             origin: new GridCoordinates(8, 8));
-        SegmentLength = 4;
-        NoTouchingRule = false;
-        
-        Apply(new InitialCross());
+        SegmentLength = segmentLength;
+        NoTouchingRule = noTouchingRule;
+
+        if (grid is null)
+        {
+            Apply(new InitialCross()); // this should rather be used as an interface?
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public void Apply(GameAction action)
@@ -45,18 +54,6 @@ public class Game
     public int GetScore()
     {
         return Grid.GetScore();
-    }
-
-    public string ToJson()
-    {
-        return "{\n" +
-               "\t\"title\": \"Morpion Solitaire\",\n" +
-               "\t\"version\": \"v1\",\n" +
-               $"\t\"segment_length\": {SegmentLength},\n" +
-               $"\t\"no_touching\": \"{NoTouchingRule.ToString()}\",\n" +
-               "\t\"grid\":\n"
-               + Grid.ToJson("\t") + "\n" +
-               "}";
     }
     
     public string ToSvg(string? id = null, string spacing = "", bool crop = false)
@@ -107,4 +104,60 @@ public class Game
         result += spacing + "</svg>";
         return result;
     }
+    
+    public string ToJson()
+    {
+        var json = new GameJson(this);
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        return JsonSerializer.Serialize(json, options);
+        // return "{\n" +
+        //        "\t\"title\": \"Morpion Solitaire\",\n" +
+        //        "\t\"version\": \"v1\",\n" +
+        //        $"\t\"segment_length\": {SegmentLength},\n" +
+        //        $"\t\"no_touching\": \"{NoTouchingRule.ToString()}\",\n" +
+        //        "\t\"grid\":\n"
+        //        + Grid.ToJson("\t") + "\n" +
+        //        "}";
+    }
+
+    public void Save(string file, bool overwrite = false)
+    {
+        if (!overwrite && File.Exists(file))
+        {
+            throw new Exception($"File '{file}' exists already.");
+        }
+        var jsonString = ToJson();
+        using (var outputFile = new StreamWriter(file))
+        {
+            outputFile.Write(jsonString);
+        }
+    }
+    
+    public static Game FromJson(string json)
+    {
+        var gameJson = JsonSerializer.Deserialize<GameJson>(json);
+        if (gameJson is null)
+        {
+            throw new Exception("Could not parse JSON file.");
+        }
+        var game = gameJson.ToGame();
+        return game;
+    }
+
+    public static Game Load(string file)
+    {
+        if (!File.Exists(file))
+        {
+            throw new Exception($"File '{file}' cannot be found.");
+        }
+        var jsonString = "";
+        using (var inputFile = new StreamReader(file))
+        {
+            jsonString = inputFile.ReadToEnd();
+        }
+        
+        return FromJson(jsonString);
+    }
+    
+    
 }
