@@ -21,8 +21,8 @@ public class IndexModel : PageModel
 
     public void OnGet()
     {
-        Game = new Game();
-        // Game = Game.Load("Game-0000.json");
+        // Game = new Game();
+        Game = Game.Load("Game-0000.json");
         // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 3));
         // Game.TrySegment(new GridCoordinates(-1, 3), new GridCoordinates(3, 7));
         var footprint = Game.Image.GetFootprint();  
@@ -46,13 +46,14 @@ public class IndexModel : PageModel
     public IActionResult OnGetRestart()
     {
         Game = new Game();
+        // Game = Game.Load("Game-0000.json");
         return new Response(Response.ActionType.Replace).Value();
     }
     
     public IActionResult OnGetSave()
     {
-        Game.Save("Game-0000.json");
-        return new Response(Response.ActionType.None).Value();
+        Game.Save("Game-0000.json", true);
+        return new Response(Response.ActionType.Alert, "Success").Value();
     }
 
     private class Response
@@ -61,14 +62,15 @@ public class IndexModel : PageModel
         public string Content { get; }
         public int? Score { get; }
 
-        public Response(ActionType action)
+        public Response(ActionType action, string message = "")
         {
             Action = action.ToString();
             Content = action switch
             {
                 ActionType.Add => Game.Grid.Actions.Last().ToSvg(),
                 ActionType.Replace => Game.Grid.ToSvg(),
-                _ => String.Empty
+                ActionType.Alert => message,
+                _ => ""
             };
             Score = (action == ActionType.None) ? null : Game.GetScore();
         }
@@ -81,6 +83,7 @@ public class IndexModel : PageModel
         public enum ActionType
         {
             None,
+            Alert,
             Add,
             Replace
         }

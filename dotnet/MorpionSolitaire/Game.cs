@@ -11,21 +11,61 @@ public class Game
     
     public const int PixelsPerUnit = 20;
 
-    public Game(int segmentLength = 4, bool noTouchingRule = false, Grid? grid = null)
+    public Game(int segmentLength = 4, bool noTouchingRule = false,
+        Grid? grid = null)
     {
-        Grid = new Grid();
-        Image = new Image(dimensions: new GridCoordinates(24, 24),
-            origin: new GridCoordinates(8, 8));
-        SegmentLength = segmentLength;
-        NoTouchingRule = noTouchingRule;
-
         if (grid is null)
         {
-            Apply(new InitialCross()); // this should rather be used as an interface?
+            grid = segmentLength switch
+            {
+                4 => Grid.Cross(),
+                _ => throw new Exception($"No default grid implemented with segment length {segmentLength}.")
+            };
         }
-        else
+        SegmentLength = segmentLength;
+        NoTouchingRule = noTouchingRule;
+        Grid = grid;
+        Image = new Image(dimensions: new GridCoordinates(24, 24),
+            origin: new GridCoordinates(8, 8));
+
+        if (grid.Actions.Count == 0)
+        {
+            throw new Exception("Attempt to create a game with an invalid grid");
+        }
+
+        var setupAction = grid.Actions.First();
+        var dots = setupAction.Elements.OfType<GridDot>().ToList();
+        foreach (var dot in dots)
+        {
+            Image.Set(new ImageCoordinates(dot.Pt), true);
+        }
+        var lines = setupAction.Elements.OfType<GridLine>().ToList();
+        if (lines.Count > 0)
         {
             throw new NotImplementedException();
+        }
+
+        for (int i = 1; i < grid.Actions.Count; i++)
+        {
+            var action = grid.Actions[i];
+            dots = action.Elements.OfType<GridDot>().ToList();
+            if (dots.Count != 1)
+            {
+                throw new Exception($"Invalid number of dots at stage {i}.");
+            }
+            lines = action.Elements.OfType<GridLine>().ToList();
+            if (lines.Count != 1)
+            {
+                throw new Exception($"Invalid number of lines at stage {i}.");
+            }
+
+            var line = lines.First();
+            var pt = dots.First().Pt;
+
+            Image.SaveBitmap("before");
+            var segment = new Segment(line.Pt1, line.Pt2, Image, SegmentLength, NoTouchingRule, pt);
+            Apply(segment);
+            Image.SaveBitmap("after");
         }
     }
 
@@ -39,7 +79,7 @@ public class Game
     {
         try
         {
-            var segment = new Segment(Image, pt1, pt2, SegmentLength, NoTouchingRule);
+            var segment = new Segment(pt1, pt2, Image, SegmentLength, NoTouchingRule);
             Apply(segment);
             return true;
         }
@@ -107,7 +147,7 @@ public class Game
     
     public string ToJson()
     {
-        var json = new GameJson(this);
+        var json = new GameDto(this);
         var options = new JsonSerializerOptions { WriteIndented = true };
         return JsonSerializer.Serialize(json, options);
         // return "{\n" +
@@ -135,7 +175,7 @@ public class Game
     
     public static Game FromJson(string json)
     {
-        var gameJson = JsonSerializer.Deserialize<GameJson>(json);
+        var gameJson = JsonSerializer.Deserialize<GameDto>(json);
         if (gameJson is null)
         {
             throw new Exception("Could not parse JSON file.");

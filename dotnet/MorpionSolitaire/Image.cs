@@ -1,4 +1,6 @@
-﻿namespace MorpionSolitaire;
+﻿using System.Drawing;
+
+namespace MorpionSolitaire;
 
 public class Image
 {
@@ -23,8 +25,8 @@ public class Image
             var gridLines = action.Elements.OfType<GridLine>().ToList();
             if (gridLines.Count == 1)
             {
-                var segment = new Segment(this, gridLines.First().Pt1, gridLines.First().Pt2,
-                    length, noTouchingRule);
+                var segment = new Segment(gridLines.First().Pt1, gridLines.First().Pt2,
+                    this, length, noTouchingRule);
                 Apply(segment.ImageAction, true);
             }
             else if (gridLines.Count == 0)
@@ -192,5 +194,28 @@ public class Image
         footprint.Xmax = dimensions.X - origin.X;
         footprint.Ymax = dimensions.Y - origin.Y;
         return footprint;
+    }
+
+    public Bitmap ToBitmap()
+    {
+        var w = _dimensions.X;
+        var h = _dimensions.Y;
+        var bitmap = new Bitmap(w, height: h);
+
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                bitmap.SetPixel(x, y, _image[x, y] ? Color.Black : Color.White);
+            }
+        }
+
+        return bitmap;
+    }
+
+    public void SaveBitmap(string file)
+    {
+        var bitmap = ToBitmap();
+        bitmap.Save(file + ".bmp");
     }
 }

@@ -35,8 +35,8 @@ public class GridLine : GridElement
                $"style=\"stroke:{color};stroke-width:0.1\" />";
     }
 
-    public override GridElementJson ToGridElementJson()
+    public override GridElementDto ToGridElementJson()
     {
-        return new GridElementJson(this);
+        return new GridElementDto(this);
     }
 }

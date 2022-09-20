@@ -4,9 +4,8 @@ public class Segment : GameAction
 {
     public List<ImageCoordinates> SupportPixels { get; }
     
-    public Segment(Image image,
-        GridCoordinates pt1, GridCoordinates pt2,
-        int length, bool noTouchingRule)
+    public Segment(GridCoordinates pt1, GridCoordinates pt2,
+        Image image, int length, bool noTouchingRule, GridCoordinates? newPt = null)
     {
         if (length <= 0)
         {
@@ -61,14 +60,18 @@ public class Segment : GameAction
             {
                 if (image.Get(pt))
                 {
-                    throw new Exception("The segment cannot overlap existing lines");
+                    throw new Exception("The segment cannot overlap existing lines.");
                 }
             }
         }
 
         if (emptyDotCount != 1)
         {
-            throw new Exception($"The segment must go through {length} existing dots exactly");
+            throw new Exception($"The segment must go through {length} existing dots exactly.");
+        }
+        if (newPt is not null && !emptyDot.ToGridCoordinates().Equals(newPt))
+        {
+            throw new Exception("Invalid segment.");
         }
         
         ImageAction.Pixels.Add(emptyDot);

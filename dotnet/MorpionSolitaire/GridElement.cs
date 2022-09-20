@@ -6,5 +6,5 @@ public abstract class GridElement
 
     // public abstract string ToJson(string spacing = "");
     public abstract string ToSvg(string color);
-    public abstract GridElementJson ToGridElementJson();
+    public abstract GridElementDto ToGridElementJson();
 }

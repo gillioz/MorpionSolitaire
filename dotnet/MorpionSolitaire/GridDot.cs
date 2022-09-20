@@ -29,8 +29,8 @@ public class GridDot : GridElement
                $"r=\"0.15\" fill=\"{color}\" />";
     }
 
-    public override GridElementJson ToGridElementJson()
+    public override GridElementDto ToGridElementJson()
     {
-        return new GridElementJson(this);
+        return new GridElementDto(this);
     }
 }

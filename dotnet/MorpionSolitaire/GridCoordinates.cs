@@ -10,4 +10,9 @@ public struct GridCoordinates
         X = x;
         Y = y;
     }
+
+    public bool Equals(GridCoordinates other)
+    {
+        return (X == other.X) && (Y == other.Y);
+    }
 }
