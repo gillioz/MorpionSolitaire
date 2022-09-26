@@ -59,6 +59,13 @@ public class Grid
     {
         Actions.Add(action);
     }
+
+    public void Undo(int steps = 1)
+    {
+        var index = Math.Max(Actions.Count - steps, 1);
+        var count = Actions.Count - index;
+        Actions.RemoveRange(index, count);
+    }
     
     public GridFootprint GetFootprint()
     {

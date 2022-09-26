@@ -25,8 +25,10 @@ public class Game
         SegmentLength = segmentLength;
         NoTouchingRule = noTouchingRule;
         Grid = grid;
-        Image = new Image(dimensions: new GridCoordinates(24, 24),
-            origin: new GridCoordinates(8, 8));
+        // Image = new Image(dimensions: new GridCoordinates(24, 24),
+        //     origin: new GridCoordinates(8, 8));
+        Image = new Image(dimensions: new GridCoordinates(12, 12),
+            origin: new GridCoordinates(1, 1));
 
         if (grid.Actions.Count == 0)
         {
@@ -62,17 +64,9 @@ public class Game
             var line = lines.First();
             var pt = dots.First().Pt;
 
-            Image.SaveBitmap("before");
             var segment = new Segment(line.Pt1, line.Pt2, Image, SegmentLength, NoTouchingRule, pt);
-            Apply(segment);
-            Image.SaveBitmap("after");
+            Image.Apply(segment.ToImageAction());
         }
-    }
-
-    public void Apply(GameAction action)
-    {
-        Grid.Apply(action.GridAction);
-        Image.Apply(action.ImageAction);
     }
 
     public bool TrySegment(GridCoordinates pt1, GridCoordinates pt2)
@@ -80,14 +74,14 @@ public class Game
         try
         {
             var segment = new Segment(pt1, pt2, Image, SegmentLength, NoTouchingRule);
-            Apply(segment);
+            Grid.Apply(segment.ToGridAction());
+            Image.Apply(segment.ToImageAction());
             return true;
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
         }
-
         return false;
     }
 
@@ -95,37 +89,48 @@ public class Game
     {
         return Grid.GetScore();
     }
-    
-    public string ToSvg(string? id = null, string spacing = "", bool crop = false)
+
+    public void Undo(int steps = 1)
     {
-        var footprint = (crop) ? Grid.GetFootprint() : Image.GetFootprint();
+        Grid.Undo(steps);
+        Image.Load(Grid, SegmentLength, NoTouchingRule);
+    }
+
+    public int SvgWidth(GridFootprint footprint)
+    {
+        return PixelsPerUnit * (footprint.Xmax - footprint.Xmin + 1);
+    }
+
+    public int SvgHeight(GridFootprint footprint)
+    {
+        return PixelsPerUnit * (footprint.Ymax - footprint.Ymin + 1);
+    }
+    
+    public string SvgViewBox(GridFootprint footprint)
+    {
+        return $"{footprint.Xmin - 0.5:F1} {footprint.Ymin - 0.5:F1} " +
+               $"{footprint.Xmax - footprint.Xmin + 1} {footprint.Ymax - footprint.Ymin + 1}";
+    }
+
+    public string SvgBackground(GridFootprint footprint, string spacing = "")
+    {
         var width = footprint.Xmax - footprint.Xmin + 1;
         var height = footprint.Ymax - footprint.Ymin + 1;
         var minX = footprint.Xmin - 0.5;
         var maxX = footprint.Xmax + 0.5;
         var minY = footprint.Ymin - 0.5;
         var maxY = footprint.Ymax + 0.5;
-        var viewBox = $"{minX:F1} {minY:F1} {width} {height}";
-
-        var result = spacing + "<svg ";
-        if (id is not null)
-        {
-            result += $"id=\"{id}\" ";
-        }
-        result += $"width=\"{PixelsPerUnit * width}\" " +
-                  $"height=\"{PixelsPerUnit * height}\" " +
-                  $"viewbox=\"{viewBox}\">\n";
-
-        result += spacing + "\t<g id=\"grid-background\">\n";
-        result += spacing + $"\t\t<rect width=\"{width}\" height=\"{height}\" "
+        
+        var result = spacing + $"<rect width=\"{width}\" height=\"{height}\" "
                           + $"x=\"{minX}\" y=\"{minY}\" "
                           + "style=\"fill:white\" />\n";
+        
         var gridstyle = "stroke:lightgray;stroke-width:0.1";
         for (int i = 0; i < width; i++)
         {
             var x = footprint.Xmin + i;
             result += spacing + 
-                      $"\t\t<line x1=\"{x}\" y1=\"{minY}\" " +
+                      $"<line x1=\"{x}\" y1=\"{minY}\" " +
                       $"x2=\"{x}\" y2=\"{maxY}\" " +
                       $"style=\"{gridstyle}\" />\n";
         }
@@ -133,10 +138,31 @@ public class Game
         {
             var y = footprint.Ymin + i;
             result += spacing + 
-                      $"\t\t<line x1=\"{minX}\" y1=\"{y}\" " +
+                      $"<line x1=\"{minX}\" y1=\"{y}\" " +
                       $"x2=\"{maxX}\" y2=\"{y}\" " +
                       $"style=\"{gridstyle}\" />\n";
         }
+
+        return result;
+    }
+    
+    public string ToSvg(string? id = null, string spacing = "", bool crop = false)
+    {
+        var footprint = (crop) ? Grid.GetFootprint() : Image.GetFootprint();
+
+        var result = spacing + "<svg ";
+        if (id is not null)
+        {
+            result += $"id=\"{id}\" ";
+        }
+        result += $"width=\"{SvgWidth(footprint)}\" " +
+                  $"height=\"{SvgHeight(footprint)}\" " +
+                  $"viewbox=\"{SvgViewBox(footprint)}\"" +
+                  $">\n";
+
+        
+        result += spacing + "\t<g id=\"grid-background\">\n";
+        result += SvgBackground(footprint, spacing + "\t\t");
         result += spacing + "\t</g>\n";
 
         result += Grid.ToSvg(spacing + '\t');
@@ -191,9 +217,9 @@ public class Game
             throw new Exception($"File '{file}' cannot be found.");
         }
         var jsonString = "";
-        using (var inputFile = new StreamReader(file))
+        using (var reader = new StreamReader(file))
         {
-            jsonString = inputFile.ReadToEnd();
+            jsonString = reader.ReadToEnd();
         }
         
         return FromJson(jsonString);

@@ -7,30 +7,33 @@
 }
 
 <div class="text-center">
+	<p style="color:red;">@Model.ErrorMessage</p>
 	<div>
-		@Html.Raw(IndexModel.Game.ToSvg("grid", "\t\t"))
+@Html.Raw(IndexModel.Game.ToSvg("grid", "\t\t"))
 	</div>
-	<p>Score: <b id="score">0</b></p>
-	<h3>One move</h3>
+	<p>Score: <b id="score">@IndexModel.Game.GetScore()</b></p>
 	<p>
-		<button disabled>Undo last move</button>
-		<button disabled>Play at random</button>
-	</p>
-	<h3>Many moves</h3>
-	<p>
-		<button onclick="ajaxRequest('Undo')">Undo</button>
-		<button disabled>Play</button>
-	</p>
-	<h3>Game</h3>
-	<p>
+		<button onclick="ajaxRequest('Undo')">Undo last move</button>
+		<button onclick="ajaxRequest('UndoFive')">Undo last five moves</button>
 		<button onclick="ajaxRequest('Restart')">Restart</button>
 	</p>
 	<p>
-		<button onclick="ajaxRequest('Save')">Save</button>
+		<button onclick="ajaxRequest('Resize')">Resize image</button>
 	</p>
+	<h5>Save the current game to your computer...</h5>
+	<form method="post">
+		<input class="button" type="submit" value="Save" asp-page-handler="Download"/>
+	</form>
+	<h5>Open a saved game from your computer...</h5>
+	<form method="post" enctype=multipart/form-data>
+		<label for="file">Select a file:</label>
+		<input type="file" name="file">
+		<input class="button" type="submit" value="Open" asp-page-handler="Upload"/>
+	</form>
+
 
 	<script>
-		// get the various elements by id
+		// get elements by id
 		let grid = document.getElementById('grid');
 		let background = document.getElementById('grid-background');
 		let score = document.getElementById('score');
@@ -46,7 +49,7 @@
 		}
 		// function to handle AJAX requests' responses
 		function responseHandler(data) {
-			switch(data.action) {
+			switch(data.type) {
 				case "Add":
 					grid.insertAdjacentHTML("beforeend", data.content);
 					break;
@@ -54,23 +57,26 @@
 					grid.innerHTML = data.content;
 					grid.insertAdjacentElement("afterbegin", background);
 					break;
-				case "Remove":
-					document.getElementById(data.content).delete();
+				case "Resize":
+					grid.setAttribute("width", data.width);
+					grid.setAttribute("height", data.height);
+					grid.setAttribute("viewbox", data.viewBox);
+					background.innerHTML = data.background;
+					minX = data.minX;
+					minY = data.minY;
 					break;
 				case "Alert":
-					alert(data.content);
+					alert(data.message);
 					break;
 				default:
 					
 			}
-			if (data.score != null){
-				score.innerText = data.score;
-			}
+			score.innerText = data.score;
 		}
 		
 		// interactive elements
-		let x1 = @Model.Xmin - 1;
-		let x2 = @Model.Xmin - 1;
+		let x1 = @IndexModel.Footprint.Xmin - 1;
+		let x2 = @IndexModel.Footprint.Xmin - 1;
 		let y1 = 0;
 		let y2 = 0;
 		grid.insertAdjacentHTML("beforeend", `<line id="interactive-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:blue;stroke-width:0.15" />`);
@@ -86,8 +92,8 @@
 		// mouse event listener
 		let clicked = false;
 		const pixelPerUnit = @Game.PixelsPerUnit;
-		const minX = @Model.Xmin;
-		const minY = @Model.Ymin;
+		let minX = @IndexModel.Footprint.Xmin;
+		let minY = @IndexModel.Footprint.Ymin;
 
 		grid.addEventListener("mouseenter", function () {
 			grid.insertAdjacentElement("beforeend", interactivePt1);

@@ -1,9 +1,15 @@
-﻿namespace MorpionSolitaire;
+﻿using System.Diagnostics;
 
-public class Segment : GameAction
+namespace MorpionSolitaire;
+
+public class Segment
 {
-    public List<ImageCoordinates> SupportPixels { get; }
-    
+    private List<ImageCoordinates> _lineImage { get; }
+    private ImageCoordinates _dotImage { get; }
+    private List<ImageCoordinates> _supportDotsImage { get; }
+    private GridLine _line { get; }
+    public GridDot _dot { get; }
+
     public Segment(GridCoordinates pt1, GridCoordinates pt2,
         Image image, int length, bool noTouchingRule, GridCoordinates? newPt = null)
     {
@@ -24,36 +30,38 @@ public class Segment : GameAction
 
         var dx = w / length;
         var dy = h / length;
-        int imin = 0;
-        int imax = 3 * length + 1;
+        int iMin = 0;
+        int iMax = 3 * length + 1;
         if (noTouchingRule)
         {
-            imin -= 1;
-            imax += 1;
+            iMin -= 1;
+            iMax += 1;
         }
 
+        _lineImage = new List<ImageCoordinates>();
+        _supportDotsImage = new List<ImageCoordinates>();
+
+        var emptyDotSet = false;
         var pt0 = new ImageCoordinates(pt1);
-        var pixels = new List<ImageCoordinates>();
-        for (int i = imin; i < imax; i++)
+        for (int i = iMin; i < iMax; i++)
         {
-            pixels.Add(new ImageCoordinates(pt0.X + i * dx, pt0.Y + i * dy));
-        }
-
-        int emptyDotCount = 0;
-        var emptyDot = new ImageCoordinates(0, 0);
-        var supportDots = new List<ImageCoordinates>();
-        foreach (ImageCoordinates pt in pixels)
-        {
+            var pt = new ImageCoordinates(pt0.X + i * dx, pt0.Y + i * dy);
             if (pt.IsDot())
             {
-                if (!image.Get(pt))
+                if (image.Get(pt))
                 {
-                    emptyDotCount += 1;
-                    emptyDot = pt;
+                    _supportDotsImage.Add(pt);
                 }
                 else
                 {
-                    supportDots.Add(pt);
+                    if (emptyDotSet)
+                    {
+                        throw new Exception("The segment does not have enough support dots.");
+                    }
+
+                    emptyDotSet = true;
+                    _dotImage = pt;
+                    _dot = new GridDot(pt.ToGridCoordinates());
                 }
             }
             else
@@ -62,28 +70,41 @@ public class Segment : GameAction
                 {
                     throw new Exception("The segment cannot overlap existing lines.");
                 }
+
+                _lineImage.Add(pt);
             }
         }
 
-        if (emptyDotCount != 1)
+        if (!emptyDotSet || _dot is null)
         {
-            throw new Exception($"The segment must go through {length} existing dots exactly.");
+            throw new Exception("The segment does not go through any empty dot.");
         }
-        if (newPt is not null && !emptyDot.ToGridCoordinates().Equals(newPt))
+
+        if (newPt is not null && !_dot.Pt.Equals(newPt))
         {
             throw new Exception("Invalid segment.");
         }
         
-        ImageAction.Pixels.Add(emptyDot);
-        foreach (ImageCoordinates pt in pixels)
+        _line = new GridLine(pt1, pt2);
+    }
+
+    public GridAction ToGridAction()
+    {
+        var gridAction = new GridAction();
+        gridAction.Add(_line);
+        gridAction.Add(_dot);
+        return gridAction;
+    }
+
+    public ImageAction ToImageAction()
+    {
+        var imageAction = new ImageAction();
+        imageAction.Pixels.Add(_dotImage);
+        foreach (var pixel in _lineImage)
         {
-            if (!pt.IsDot())
-            {
-                ImageAction.Pixels.Add(pt);
-            }
+            imageAction.Pixels.Add(pixel);
         }
-        GridAction.Add(new GridDot(emptyDot.ToGridCoordinates()));
-        GridAction.Add(new GridLine(pt1, pt2));
-        SupportPixels = supportDots;
+
+        return imageAction;
     }
 }
