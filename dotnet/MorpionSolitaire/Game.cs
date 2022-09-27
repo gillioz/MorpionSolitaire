@@ -25,8 +25,8 @@ public class Game
         SegmentLength = segmentLength;
         NoTouchingRule = noTouchingRule;
         Grid = grid;
-        Image = new Image(dimensions: new GridCoordinates(24, 24),
-            origin: new GridCoordinates(7, 7));
+        Image = new Image(dimensions: new GridCoordinates(20, 20),
+            origin: new GridCoordinates(5, 5));
 
         if (grid.Actions.Count == 0)
         {
