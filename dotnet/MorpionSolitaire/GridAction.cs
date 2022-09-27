@@ -21,28 +21,14 @@ public class GridAction
             element.ComputeFootprint(footprint);
         }
     }
-    
-    // public string ToJson(string spacing = "")
-    // {
-    //     var list = Elements.Select(x => x.ToJson(spacing + "\t"));
-    //     return spacing + "[\n" + 
-    //            string.Join(",\n", list) + "\n" +
-    //            spacing + "]";
-    // }
 
-    public string ToSvg(string? id = null, string spacing = "", string color = "black")
+    public string ToSvg(string color = "black", bool grouped = false)
     {;
-        var result = spacing + "<g";
-        if (id is not null)
-        {
-            result += $" id=\"{id}\"";
-        }
-        result += ">\n";
+        var result = "";
         foreach (var element in Elements)
         {
-            result += spacing + "\t" + element.ToSvg(color) + "\n";
+            result += element.ToSvg(color);
         }
-        result += spacing + "</g>";
-        return result;
+        return (grouped) ? "<g>" + result + "</g>" : result;
     }
 }

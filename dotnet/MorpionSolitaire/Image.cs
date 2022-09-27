@@ -16,8 +16,6 @@ public class Image
         _origin.Add(1, 1);
         _image = EmptyImage();
         _sizeIncrement = 3 * sizeIncrement;
-        
-        Console.Write($"Grid dimensions: ({_dimensions.X}, {_dimensions.Y})\n");
     }
     
     private bool[,] EmptyImage()

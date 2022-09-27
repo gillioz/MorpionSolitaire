@@ -124,14 +124,12 @@ public class GridElementDto
                     throw new Exception("Element 'dot' must have exactly one coordinate.");
                 }
                 return new GridDot(Coordinates[0].ToGridCoordinates());
-                break;
             case "line":
                 if (Coordinates.Count != 2)
                 {
                     throw new Exception("Element 'dot' must have exactly one coordinate.");
                 }
                 return new GridLine(Coordinates[0].ToGridCoordinates(), Coordinates[1].ToGridCoordinates());
-                break;
             default:
                 throw new Exception($"Unknown element of type '{Type}'.");
         }

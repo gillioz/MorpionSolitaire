@@ -1,5 +1,4 @@
 ﻿@page
-@using System.Security.AccessControl
 @using MorpionSolitaire
 @model IndexModel
 @{
@@ -8,17 +7,16 @@
 
 <div class="text-center">
 	<p style="color:red;">@Model.ErrorMessage</p>
-	<div>
-@Html.Raw(IndexModel.Game.ToSvg("grid", "\t\t"))
-	</div>
-	<p>Score: <b id="score">@IndexModel.Game.GetScore()</b></p>
+	<div id="grid-container">@Html.Raw(IndexModel.Game.ToSvg())</div>
+	<p>Score: <b id="score-container">@IndexModel.Game.GetScore()</b></p>
 	<p>
 		<button onclick="ajaxRequest('Undo')">Undo last move</button>
 		<button onclick="ajaxRequest('UndoFive')">Undo last five moves</button>
 		<button onclick="ajaxRequest('Restart')">Restart</button>
 	</p>
 	<p>
-		<button onclick="ajaxRequest('Resize')">Resize image</button>
+		<button onclick="ajaxRequest('Reload')">Reload image</button>
+		use this button if you need more space on the grid
 	</p>
 	<h5>Save the current game to your computer...</h5>
 	<form method="post">
@@ -27,16 +25,87 @@
 	<h5>Open a saved game from your computer...</h5>
 	<form method="post" enctype=multipart/form-data>
 		<label for="file">Select a file:</label>
-		<input type="file" name="file">
+		<input type="file" name="file" id="file">
 		<input class="button" type="submit" value="Open" asp-page-handler="Upload"/>
 	</form>
 
 
 	<script>
 		// get elements by id
-		let grid = document.getElementById('grid');
-		let background = document.getElementById('grid-background');
-		let score = document.getElementById('score');
+		const gridContainer = document.getElementById('grid-container');
+		const scoreContainer = document.getElementById('score-container');
+		
+		// create a SVG group from a string
+		function newSVGElement(content) {
+            let element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            element.innerHTML = content;
+            return element;
+        }
+		// interactive elements
+		let interactiveLine = newSVGElement('<line x1="0" y1="0" x2="0" y2="0" style="stroke:blue;stroke-width:0.15" />');
+		let interactivePt1 = newSVGElement('<circle cx="0" cy="0" r="0.2" fill="blue" />');
+		let interactivePt2 = newSVGElement('<circle cx="0" cy="0" r="0.2" fill="blue" />');
+		// gridContainer.firstChild.appendChild(interactivePt1);
+		
+		// mouse event listener
+		let clicked = false;
+		const pixelPerUnit = @Game.PixelsPerUnit;
+		let minX = @IndexModel.Footprint.Xmin;
+		let minY = @IndexModel.Footprint.Ymin;
+		let x1 = 0;
+		let x2 = 0;
+		let y1 = 0;
+		let y2 = 0;
+
+		function mouseEnter() {
+			gridContainer.firstChild.appendChild(interactivePt1);
+		}
+		function mouseLeave() {
+			interactivePt1.remove();
+			if (clicked) {
+				clicked = false;
+				interactiveLine.remove();
+				interactivePt2.remove();
+			}
+		}
+		function mouseMove(mouse) {
+			x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
+			y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
+			interactivePt1.firstElementChild.setAttribute('cx', x1);
+			interactivePt1.firstElementChild.setAttribute('cy', y1);
+			interactiveLine.firstElementChild.setAttribute('x1', x1);
+			interactiveLine.firstElementChild.setAttribute('y1', y1);
+		}
+		function mouseClick(mouse) {
+			x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
+			y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
+			if (clicked) {
+				clicked = false;
+				interactivePt2.remove();
+				interactiveLine.remove();
+				ajaxRequest(`TrySegment&x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`);
+			}
+			else {
+				clicked = true;
+				x2 = x1;
+				y2 = y1;
+				interactiveLine.firstElementChild.setAttribute('x2', x2);
+				interactiveLine.firstElementChild.setAttribute('y2', y2);
+				interactivePt2.firstElementChild.setAttribute('cx', x2);
+				interactivePt2.firstElementChild.setAttribute('cy', y2);
+				gridContainer.firstChild.appendChild(interactiveLine);
+				gridContainer.firstChild.appendChild(interactivePt2);
+			}
+		}
+		function addMouseEventListeners(){
+			gridContainer.firstChild.addEventListener("mouseenter", mouseEnter);
+			gridContainer.firstChild.addEventListener("mouseleave", mouseLeave);
+			gridContainer.firstChild.addEventListener("mousemove", mouseMove);
+			gridContainer.firstChild.addEventListener("click", mouseClick);
+		}
+		
+		addMouseEventListeners();
+		
 		
 		// AJAX request
 		function ajaxRequest(handler) {
@@ -51,19 +120,13 @@
 		function responseHandler(data) {
 			switch(data.type) {
 				case "Add":
-					grid.insertAdjacentHTML("beforeend", data.content);
+					gridContainer.firstChild.appendChild(newSVGElement(data.newElement));
 					break;
 				case "Replace":
-					grid.innerHTML = data.content;
-					grid.insertAdjacentElement("afterbegin", background);
-					break;
-				case "Resize":
-					grid.setAttribute("width", data.width);
-					grid.setAttribute("height", data.height);
-					grid.setAttribute("viewbox", data.viewBox);
-					background.innerHTML = data.background;
+					gridContainer.innerHTML = data.gridContent;
 					minX = data.minX;
 					minY = data.minY;
+					addMouseEventListeners();
 					break;
 				case "Alert":
 					alert(data.message);
@@ -71,70 +134,8 @@
 				default:
 					
 			}
-			score.innerText = data.score;
+			scoreContainer.innerText = data.score;
 		}
-		
-		// interactive elements
-		let x1 = @IndexModel.Footprint.Xmin - 1;
-		let x2 = @IndexModel.Footprint.Xmin - 1;
-		let y1 = 0;
-		let y2 = 0;
-		grid.insertAdjacentHTML("beforeend", `<line id="interactive-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:blue;stroke-width:0.15" />`);
-		grid.insertAdjacentHTML("beforeend", `<circle id="interactive-pt1" cx="${x1}" cy="${y1}" r="0.2" fill="blue" />`);
-		grid.insertAdjacentHTML("beforeend", `<circle id="interactive-pt2" cx="${x2}" cy="${y2}" r="0.2" fill="blue" />`);
-		let interactiveLine = document.getElementById("interactive-line");
-		let interactivePt1 = document.getElementById("interactive-pt1");
-		let interactivePt2 = document.getElementById("interactive-pt2");
-		// interactivePt1.remove();
-		interactivePt2.remove();
-		interactiveLine.remove();
-		
-		// mouse event listener
-		let clicked = false;
-		const pixelPerUnit = @Game.PixelsPerUnit;
-		let minX = @IndexModel.Footprint.Xmin;
-		let minY = @IndexModel.Footprint.Ymin;
-
-		grid.addEventListener("mouseenter", function () {
-			grid.insertAdjacentElement("beforeend", interactivePt1);
-		});
-		grid.addEventListener("mouseleave", function () {
-			interactivePt1.remove();
-			if (clicked) {
-				clicked = false;
-				interactiveLine.remove();
-				interactivePt2.remove();
-			}
-		});
-		grid.addEventListener("mousemove", function (mouse) {
-			x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
-            y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
-			interactivePt1.setAttribute('cx', x1);
-			interactivePt1.setAttribute('cy', y1);
-			interactiveLine.setAttribute('x1', x1);
-			interactiveLine.setAttribute('y1', y1);
-		});
-		grid.addEventListener("click", function (mouse) {
-			x1 = Math.floor(mouse.offsetX / pixelPerUnit) + minX;
-            y1 = Math.floor(mouse.offsetY / pixelPerUnit) + minY;
-			if (clicked) {
-				clicked = false;
-				interactivePt2.remove();
-				interactiveLine.remove();
-				ajaxRequest(`TrySegment&x1=${x1}&y1=${y1}&x2=${x2}&y2=${y2}`);
-			}
-			else {
-				clicked = true;
-				x2 = x1;
-				y2 = y1;
-				interactiveLine.setAttribute('x2', x2);
-				interactiveLine.setAttribute('y2', y2);
-				interactivePt2.setAttribute('cx', x2);
-				interactivePt2.setAttribute('cy', y2);
-				grid.insertAdjacentElement("beforeend", interactiveLine);
-				grid.insertAdjacentElement("beforeend", interactivePt2);
-			}
-		});
 		
 	</script>
 </div>

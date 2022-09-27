@@ -9,17 +9,17 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
 
-    public static Game Game { get; set; }
-    public static GridFootprint Footprint { get; set; }
+    public static Game Game { get; set; } = new Game();
+    public static GridFootprint Footprint { get; set; } = new GridFootprint();
     public string ErrorMessage { get; set; }
 
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
+        ErrorMessage = "";
     }
 
-    public void OnGet()
-    {
+    public void OnGet() {
         Game = new Game();
         Footprint = Game.Image.GetFootprint();
         ErrorMessage = "";
@@ -29,10 +29,9 @@ public class IndexModel : PageModel
     {
         var jsonString = Game.ToJson();
         var bytes = Encoding.UTF8.GetBytes(jsonString);
-        var dateTime = System.DateTime.Now;
-        var file = 
-            $"MorpionSolitaire-{dateTime.Year}-{dateTime.Month}-{dateTime.Day}" +
-            $"-{dateTime.Hour}-{dateTime.Minute}.json";
+        var file = "MorpionSolitaire-" +
+            DateTime.Now.ToString("yyyy-MM-dd-HHmm") +
+            ".json";
         return File(bytes, "application/json", file);
     }
 
@@ -48,11 +47,11 @@ public class IndexModel : PageModel
             {
                 throw new Exception("Invalid file type");
             }
-            if (file.Length > (long)100000)
+            if (file.Length > 200000)
             {
-                throw new Exception("File size cannot exceed 100kb.");
-            }
-            var jsonString = "";
+                throw new Exception("File size cannot exceed 200kb.");
+            } 
+            string jsonString;
             using (var reader = new StreamReader(file.OpenReadStream()))
             {
                 jsonString = reader.ReadToEnd();
@@ -76,43 +75,43 @@ public class IndexModel : PageModel
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
-            return new AddToGridResponse().ToJsonResult();
+            return new AddToGridAjaxResponse().ToJsonResult();
         }
 
-        return new Response().ToJsonResult();
+        return new AjaxResponse().ToJsonResult();
     }
 
     public IActionResult OnGetRestart()
     {
         Game = new Game();
         Footprint = Game.Image.GetFootprint();
-        return new ReplaceGridResponse().ToJsonResult();
+        return new ReplaceGridAjaxResponse().ToJsonResult();
+    }
+
+    public IActionResult OnGetReload()
+    {
+        Footprint = Game.Image.GetFootprint();
+        return new ReplaceGridAjaxResponse().ToJsonResult();
     }
 
     public IActionResult OnGetUndo()
     {
         Game.Undo();
-        return new ReplaceGridResponse().ToJsonResult();
+        return new ReplaceGridAjaxResponse().ToJsonResult();
     }
 
     public IActionResult OnGetUndoFive()
     {
         Game.Undo(5);
-        return new ReplaceGridResponse().ToJsonResult();
-    }
-
-    public IActionResult OnGetResize()
-    {
-        Footprint = Game.Image.GetFootprint();
-        return new ResizeGridResponse().ToJsonResult();
+        return new ReplaceGridAjaxResponse().ToJsonResult();
     }
     
-    private class Response
+    private class AjaxResponse
     {
         public string Type { get; set; }
         public int Score { get; set; }
 
-        public Response()
+        public AjaxResponse()
         {
             Type = "None";
             Score = Game.GetScore();
@@ -124,55 +123,38 @@ public class IndexModel : PageModel
         }
     }
 
-    private class AlertResponse : Response
+    private class AlertAjaxResponse : AjaxResponse
     {
         public string Message { get; }
 
-        public AlertResponse(string message)
+        public AlertAjaxResponse(string message)
         {
             Type = "Alert";
             Message = message;
         }
     }
 
-    private class AddToGridResponse : Response
+    private class AddToGridAjaxResponse : AjaxResponse
     {
-        public string Content { get; }
+        public string NewElement { get; }
 
-        public AddToGridResponse()
+        public AddToGridAjaxResponse()
         {
             Type = "Add";
-            Content = Game.Grid.Actions.Last().ToSvg();
+            NewElement = Game.Grid.Actions.Last().ToSvg();
         }
     }
 
-    private class ReplaceGridResponse : Response
+    private class ReplaceGridAjaxResponse : AjaxResponse
     {
-        public string Content { get; }
-
-        public ReplaceGridResponse()
-        {
-            Type = "Replace";
-            Content = Game.Grid.ToSvg();
-        }
-    }
-
-    private class ResizeGridResponse : Response
-    {
-        public int Width { get; }
-        public int Height { get; }
-        public string ViewBox { get; }
-        public string Background { get; }
+        public string GridContent { get; }
         public int MinX { get; }
         public int MinY { get; }
 
-        public ResizeGridResponse()
+        public ReplaceGridAjaxResponse()
         {
-            Type = "Resize";
-            Width = Game.SvgWidth(Footprint);
-            Height = Game.SvgHeight(Footprint);
-            ViewBox = Game.SvgViewBox(Footprint);
-            Background = Game.SvgBackground(Footprint);
+            Type = "Replace";
+            GridContent = Game.ToSvg();
             MinX = Footprint.Xmin;
             MinY = Footprint.Ymin;
         }

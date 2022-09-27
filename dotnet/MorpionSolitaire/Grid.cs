@@ -76,29 +76,13 @@ public class Grid
         }
         return footprint;
     }
-
-    // public string ToJson(string spacing = "")
-    // {
-    //     var result = spacing + "[\n";
-    //     for (int i = 0; i < Actions.Count; i++)
-    //     {
-    //         result += spacing + "\t{\n" +
-    //                   spacing + $"\t\t\"stage\": {i},\n" +
-    //                   spacing + "\t\t\"actions\":\n" +
-    //                   Actions[i].ToJson(spacing + "\t\t") + "\n" +
-    //                   spacing + "\t},\n";
-    //     }
-    //     result = result.Remove(result.Length - 2) + "\n";
-    //     result += spacing + "]";
-    //     return result;
-    // }
     
-    public string ToSvg(string spacing = "")
+    public string ToSvg()
     {
-        var result = string.Empty;
-        for (int i = 0; i < Actions.Count; i++)
+        var result = "";
+        foreach (var action in Actions)
         {
-            result += Actions[i].ToSvg($"grid-action-{i}", spacing) + "\n";
+            result += action.ToSvg(grouped: true);
         }
 
         return result;

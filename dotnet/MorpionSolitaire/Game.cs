@@ -25,10 +25,8 @@ public class Game
         SegmentLength = segmentLength;
         NoTouchingRule = noTouchingRule;
         Grid = grid;
-        // Image = new Image(dimensions: new GridCoordinates(24, 24),
-        //     origin: new GridCoordinates(8, 8));
-        Image = new Image(dimensions: new GridCoordinates(12, 12),
-            origin: new GridCoordinates(1, 1));
+        Image = new Image(dimensions: new GridCoordinates(24, 24),
+            origin: new GridCoordinates(7, 7));
 
         if (grid.Actions.Count == 0)
         {
@@ -112,7 +110,7 @@ public class Game
                $"{footprint.Xmax - footprint.Xmin + 1} {footprint.Ymax - footprint.Ymin + 1}";
     }
 
-    public string SvgBackground(GridFootprint footprint, string spacing = "")
+    public string SvgBackground(GridFootprint footprint, bool grouped = false)
     {
         var width = footprint.Xmax - footprint.Xmin + 1;
         var height = footprint.Ymax - footprint.Ymin + 1;
@@ -121,54 +119,33 @@ public class Game
         var minY = footprint.Ymin - 0.5;
         var maxY = footprint.Ymax + 0.5;
         
-        var result = spacing + $"<rect width=\"{width}\" height=\"{height}\" "
-                          + $"x=\"{minX}\" y=\"{minY}\" "
-                          + "style=\"fill:white\" />\n";
+        var result = $"<rect width=\"{width}\" height=\"{height}\" "
+                          + $"x=\"{minX}\" y=\"{minY}\" style=\"fill:white\" />";
         
-        var gridstyle = "stroke:lightgray;stroke-width:0.1";
-        for (int i = 0; i < width; i++)
+        const string gridStyle = "stroke:lightgray;stroke-width:0.1";
+        for (var i = 0; i < width; i++)
         {
             var x = footprint.Xmin + i;
-            result += spacing + 
-                      $"<line x1=\"{x}\" y1=\"{minY}\" " +
-                      $"x2=\"{x}\" y2=\"{maxY}\" " +
-                      $"style=\"{gridstyle}\" />\n";
+            result += $"<line x1=\"{x}\" y1=\"{minY}\" x2=\"{x}\" y2=\"{maxY}\" style=\"{gridStyle}\" />";
         }
-        for (int i = 0; i < height; i++)
+        for (var i = 0; i < height; i++)
         {
             var y = footprint.Ymin + i;
-            result += spacing + 
-                      $"<line x1=\"{minX}\" y1=\"{y}\" " +
-                      $"x2=\"{maxX}\" y2=\"{y}\" " +
-                      $"style=\"{gridstyle}\" />\n";
+            result += $"<line x1=\"{minX}\" y1=\"{y}\" x2=\"{maxX}\" y2=\"{y}\" style=\"{gridStyle}\" />";
         }
 
-        return result;
+        return (grouped) ? "<g>" + result + "</g>" : result;
     }
     
-    public string ToSvg(string? id = null, string spacing = "", bool crop = false)
+    public string ToSvg(bool crop = false)
     {
         var footprint = (crop) ? Grid.GetFootprint() : Image.GetFootprint();
 
-        var result = spacing + "<svg ";
-        if (id is not null)
-        {
-            result += $"id=\"{id}\" ";
-        }
-        result += $"width=\"{SvgWidth(footprint)}\" " +
-                  $"height=\"{SvgHeight(footprint)}\" " +
-                  $"viewbox=\"{SvgViewBox(footprint)}\"" +
-                  $">\n";
-
-        
-        result += spacing + "\t<g id=\"grid-background\">\n";
-        result += SvgBackground(footprint, spacing + "\t\t");
-        result += spacing + "\t</g>\n";
-
-        result += Grid.ToSvg(spacing + '\t');
-        
-        result += spacing + "</svg>";
-        return result;
+        return $"<svg width=\"{SvgWidth(footprint)}\" height=\"{SvgHeight(footprint)}\" " +
+               $"viewbox=\"{SvgViewBox(footprint)}\">" +
+               SvgBackground(footprint) +
+               Grid.ToSvg() +
+               "</svg>";
     }
     
     public string ToJson()
@@ -176,14 +153,6 @@ public class Game
         var json = new GameDto(this);
         var options = new JsonSerializerOptions { WriteIndented = true };
         return JsonSerializer.Serialize(json, options);
-        // return "{\n" +
-        //        "\t\"title\": \"Morpion Solitaire\",\n" +
-        //        "\t\"version\": \"v1\",\n" +
-        //        $"\t\"segment_length\": {SegmentLength},\n" +
-        //        $"\t\"no_touching\": \"{NoTouchingRule.ToString()}\",\n" +
-        //        "\t\"grid\":\n"
-        //        + Grid.ToJson("\t") + "\n" +
-        //        "}";
     }
 
     public void Save(string file, bool overwrite = false)

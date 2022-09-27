@@ -1,14 +1,12 @@
-﻿using System.Diagnostics;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class Segment
 {
-    private List<ImageCoordinates> _lineImage { get; }
-    private ImageCoordinates _dotImage { get; }
-    private List<ImageCoordinates> _supportDotsImage { get; }
-    private GridLine _line { get; }
-    public GridDot _dot { get; }
+    private List<ImageCoordinates> LineImage { get; }
+    private ImageCoordinates DotImage { get; }
+    private List<ImageCoordinates> SupportDotsImage { get; }
+    private GridLine Line { get; }
+    private GridDot Dot { get; }
 
     public Segment(GridCoordinates pt1, GridCoordinates pt2,
         Image image, int length, bool noTouchingRule, GridCoordinates? newPt = null)
@@ -38,8 +36,8 @@ public class Segment
             iMax += 1;
         }
 
-        _lineImage = new List<ImageCoordinates>();
-        _supportDotsImage = new List<ImageCoordinates>();
+        LineImage = new List<ImageCoordinates>();
+        SupportDotsImage = new List<ImageCoordinates>();
 
         var emptyDotSet = false;
         var pt0 = new ImageCoordinates(pt1);
@@ -50,7 +48,7 @@ public class Segment
             {
                 if (image.Get(pt))
                 {
-                    _supportDotsImage.Add(pt);
+                    SupportDotsImage.Add(pt);
                 }
                 else
                 {
@@ -60,8 +58,8 @@ public class Segment
                     }
 
                     emptyDotSet = true;
-                    _dotImage = pt;
-                    _dot = new GridDot(pt.ToGridCoordinates());
+                    DotImage = pt;
+                    Dot = new GridDot(pt.ToGridCoordinates());
                 }
             }
             else
@@ -71,36 +69,36 @@ public class Segment
                     throw new Exception("The segment cannot overlap existing lines.");
                 }
 
-                _lineImage.Add(pt);
+                LineImage.Add(pt);
             }
         }
 
-        if (!emptyDotSet || _dot is null)
+        if (!emptyDotSet || Dot is null || DotImage is null)
         {
             throw new Exception("The segment does not go through any empty dot.");
         }
 
-        if (newPt is not null && !_dot.Pt.Equals(newPt))
+        if (newPt is not null && !Dot.Pt.Equals(newPt))
         {
             throw new Exception("Invalid segment.");
         }
         
-        _line = new GridLine(pt1, pt2);
+        Line = new GridLine(pt1, pt2);
     }
 
     public GridAction ToGridAction()
     {
         var gridAction = new GridAction();
-        gridAction.Add(_line);
-        gridAction.Add(_dot);
+        gridAction.Add(Line);
+        gridAction.Add(Dot);
         return gridAction;
     }
 
     public ImageAction ToImageAction()
     {
         var imageAction = new ImageAction();
-        imageAction.Pixels.Add(_dotImage);
-        foreach (var pixel in _lineImage)
+        imageAction.Pixels.Add(DotImage);
+        foreach (var pixel in LineImage)
         {
             imageAction.Pixels.Add(pixel);
         }
