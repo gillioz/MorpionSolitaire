@@ -88,6 +88,11 @@ public class Game
         return Grid.GetScore();
     }
 
+    public GridFootprint GetFootPrint(bool crop = false)
+    {
+        return (crop) ? Grid.GetFootprint() : Image.GetFootprint();
+    }
+
     public void Undo(int steps = 1)
     {
         Grid.Undo(steps);
