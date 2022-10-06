@@ -92,6 +92,58 @@ public class Game
     {
         return (crop) ? Grid.GetFootprint() : Image.GetFootprint();
     }
+    
+    private void TryAddSegment(GridCoordinates pt1, GridCoordinates pt2, ICollection<Segment> list) 
+    {
+        try
+        {
+            var segment = new Segment(pt1, pt2, Image, SegmentLength, NoTouchingRule);
+            list.Add(segment);
+        }
+        catch (Exception e)
+        {
+            // ignored
+            Console.WriteLine(e);
+        }
+    }
+
+    public List<Segment> FindAllSegments()
+    {
+        var footprint = Grid.GetFootprint();
+        var segments = new List<Segment>();
+
+        for (var x = footprint.Xmin; x <= footprint.Xmax; x++)
+        {
+            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - SegmentLength + 1; y++)
+            {
+                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x, y + SegmentLength), segments);
+            }
+        }
+
+        for (var y = footprint.Ymin; y <= footprint.Ymax; y++)
+        {
+            for (var x = footprint.Xmin - 1; x <= footprint.Xmax - SegmentLength + 1; x++)
+            {
+                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + SegmentLength, y), segments);
+            }
+        }
+
+        for (var x = footprint.Xmin - 1; x <= footprint.Xmax - SegmentLength + 1; x++)
+        {
+            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - SegmentLength + 1; y++)
+            {
+                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + SegmentLength, y + SegmentLength), segments);
+                TryAddSegment(new GridCoordinates(x, y + SegmentLength), new GridCoordinates(x + SegmentLength, y), segments);
+            }
+        }
+
+        return segments;
+    }
+    
+    public List<Segment> FindNewSegments(GridCoordinates lastDot)
+    {
+        throw new NotImplementedException();
+    }
 
     public void Undo(int steps = 1)
     {

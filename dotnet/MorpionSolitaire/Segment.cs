@@ -1,4 +1,6 @@
-﻿namespace MorpionSolitaire;
+﻿using Microsoft.VisualBasic.CompilerServices;
+
+namespace MorpionSolitaire;
 
 public class Segment
 {
@@ -104,5 +106,15 @@ public class Segment
         }
 
         return imageAction;
+    }
+    
+    public static bool operator ==(Segment s1, Segment s2)
+    {
+        return s1.Line == s2.Line;
+    }
+
+    public static bool operator !=(Segment s1, Segment s2)
+    {
+        return s1.Line != s2.Line;
     }
 }

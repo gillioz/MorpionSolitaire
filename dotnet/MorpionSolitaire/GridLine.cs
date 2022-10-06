@@ -7,8 +7,16 @@ public class GridLine : GridElement
 
     public GridLine(GridCoordinates pt1, GridCoordinates pt2)
     {
-        Pt1 = pt1;
-        Pt2 = pt2;
+        if (pt1 < pt2)
+        {
+            Pt1 = pt1;
+            Pt2 = pt2;
+        }
+        else
+        {
+            Pt1 = pt2;
+            Pt2 = pt1;
+        }
     }
     
     public override void ComputeFootprint(GridFootprint footprint)
@@ -26,5 +34,15 @@ public class GridLine : GridElement
     public override GridElementDto ToGridElementJson()
     {
         return new GridElementDto(this);
+    }
+    
+    public static bool operator ==(GridLine l1, GridLine l2)
+    {
+        return l1.Pt1 == l2.Pt1 && l1.Pt2 == l2.Pt2;
+    }
+
+    public static bool operator !=(GridLine l1, GridLine l2)
+    {
+        return l1.Pt1 != l2.Pt1 || l1.Pt2 != l2.Pt2;
     }
 }

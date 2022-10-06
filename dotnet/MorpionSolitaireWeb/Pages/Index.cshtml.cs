@@ -20,6 +20,7 @@ public class IndexModel : PageModel
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
+        Game = new Game();
         ErrorMessage = "";
     }
 
@@ -64,6 +65,7 @@ public class IndexModel : PageModel
             Game = Games[sessionId];
         }
         ActiveSessions.Add(sessionId);
+        ErrorMessage = $"Number of possible moves: {Game.FindAllSegments().Count}";
     }
 
     public ActionResult OnPostDownload()

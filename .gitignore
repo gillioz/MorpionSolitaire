@@ -5,4 +5,5 @@ dotnet/MorpionSolitaire/obj
 dotnet/MorpionSolitaireUI
 dotnet/MorpionSolitaireWeb/bin
 dotnet/MorpionSolitaireWeb/obj
-
+dotnet/MorpionSolitaireGraph/bin
+dotnet/MorpionSolitaireGraph/obj
