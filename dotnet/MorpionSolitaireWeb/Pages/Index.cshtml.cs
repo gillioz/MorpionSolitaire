@@ -65,7 +65,8 @@ public class IndexModel : PageModel
             Game = Games[sessionId];
         }
         ActiveSessions.Add(sessionId);
-        ErrorMessage = $"Number of possible moves: {Game.FindAllSegments().Count}";
+        ErrorMessage = $"Number of possible moves: {Game.FindAllSegments().Count} " +
+                       $"(refresh page to see actual value)";
     }
 
     public ActionResult OnPostDownload()
@@ -116,7 +117,7 @@ public class IndexModel : PageModel
     public IActionResult OnGetTrySegment(string x1, string y1, string x2, string y2)
     {
         RestoreSession();
-        var success = Game.TrySegment(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
+        var success = Game.TryApplySegment(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {

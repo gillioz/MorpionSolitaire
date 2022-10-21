@@ -23,7 +23,7 @@ public class Image
         return new bool[_dimensions.X, _dimensions.Y];
     }
 
-    public void Load(Grid grid, int length, bool noTouchingRule)
+    public void Load(Grid grid, int segmentLength, bool noTouchingRule)
     {
         _image = EmptyImage();
         
@@ -38,8 +38,12 @@ public class Image
             var gridLines = action.Elements.OfType<GridLine>().ToList();
             if (gridLines.Count == 1)
             {
-                var segment = new Segment(gridLines.First().Pt1, gridLines.First().Pt2,
-                    this, length, noTouchingRule);
+                var segment = NewSegment(gridLines.First().Pt1, gridLines.First().Pt2,
+                    segmentLength, noTouchingRule);
+                if (segment is null)
+                {
+                    throw new Exception("Invalid segment");
+                }
                 Apply(segment.ToImageAction(), true);
             }
             else if (gridLines.Count == 0)
@@ -111,6 +115,79 @@ public class Image
         _image[x, y] = value;
     }
 
+    public Segment? NewSegment(GridCoordinates pt1, GridCoordinates pt2,
+        int segmentLength, bool noTouchingRule)
+    {
+        if (segmentLength <= 0)
+        {
+            throw new Exception($"Invalid segment length: {segmentLength}");
+        }
+        
+        var w = pt2.X - pt1.X;
+        var h = pt2.Y - pt1.Y;
+        if ((w != 0 && Math.Abs(w) != segmentLength)
+            || (h != 0 && Math.Abs(h) != segmentLength)
+            || (w == 0 && h == 0))
+        {
+            return null;
+        }
+        
+        var dx = w / segmentLength;
+        var dy = h / segmentLength;
+        int iMin = 0;
+        int iMax = 3 * segmentLength + 1;
+        if (noTouchingRule)
+        {
+            iMin -= 1;
+            iMax += 1;
+        }
+
+        ImageCoordinates? dot = null;
+        var supportDots = new List<ImageCoordinates>();
+        var line = new List<ImageCoordinates>();
+
+        var emptyDotSet = false;
+        var pt0 = new ImageCoordinates(pt1);
+        for (int i = iMin; i < iMax; i++)
+        {
+            var pt = new ImageCoordinates(pt0.X + i * dx, pt0.Y + i * dy);
+            if (pt.IsDot())
+            {
+                if (Get(pt))
+                {
+                    supportDots.Add(pt);
+                }
+                else
+                {
+                    if (emptyDotSet)
+                    {
+                        return null;
+                    }
+
+                    emptyDotSet = true;
+                    dot = pt;
+                }
+            }
+            else
+            {
+                if (Get(pt))
+                {
+                    return null;
+                }
+
+                line.Add(pt);
+            }
+        }
+
+        if (!emptyDotSet || dot is null)
+        {
+            return null;
+        }
+
+        return new Segment(new GridDot(dot.ToGridCoordinates()), new GridLine(pt1, pt2),
+            dot, supportDots, line);
+    }
+    
     private void ExtendLeft()
     {
         _dimensions.X += _sizeIncrement;

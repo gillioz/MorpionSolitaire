@@ -62,24 +62,37 @@ public class Game
             var line = lines.First();
             var pt = dots.First().Pt;
 
-            var segment = new Segment(line.Pt1, line.Pt2, Image, SegmentLength, NoTouchingRule, pt);
+            var segment = NewSegment(line.Pt1, line.Pt2);
+            if (segment is null)
+            {
+                throw new Exception("Failed to load the grid");
+            }
             Image.Apply(segment.ToImageAction());
         }
     }
 
-    public bool TrySegment(GridCoordinates pt1, GridCoordinates pt2)
+    public Segment? NewSegment(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
     {
-        try
+        var segment = Image.NewSegment(pt1, pt2, SegmentLength, NoTouchingRule);
+        if (newPt is not null && segment is not null 
+                              && !segment.Dot.Pt.Equals(newPt))
         {
-            var segment = new Segment(pt1, pt2, Image, SegmentLength, NoTouchingRule);
+            return null;
+        }
+
+        return segment;
+    }
+
+    public bool TryApplySegment(GridCoordinates pt1, GridCoordinates pt2)
+    {
+        var segment = NewSegment(pt1, pt2);
+        if (segment is not null)
+        {
             Grid.Apply(segment.ToGridAction());
             Image.Apply(segment.ToImageAction());
             return true;
         }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
+
         return false;
     }
 
@@ -93,18 +106,16 @@ public class Game
         return (crop) ? Grid.GetFootprint() : Image.GetFootprint();
     }
     
-    private void TryAddSegment(GridCoordinates pt1, GridCoordinates pt2, ICollection<Segment> list) 
+    private bool TryAddSegment(GridCoordinates pt1, GridCoordinates pt2, ICollection<Segment> list)
     {
-        try
+        var segment = NewSegment(pt1, pt2);
+        if (segment is not null)
         {
-            var segment = new Segment(pt1, pt2, Image, SegmentLength, NoTouchingRule);
             list.Add(segment);
+            return true;
         }
-        catch (Exception e)
-        {
-            // ignored
-            Console.WriteLine(e);
-        }
+
+        return false;
     }
 
     public List<Segment> FindAllSegments()
