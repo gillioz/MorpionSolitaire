@@ -1,8 +1,8 @@
-﻿using System.Collections.ObjectModel;
-using System.Text;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MorpionSolitaire;
+using System.Collections.ObjectModel;
+using System.Text;
 
 namespace MorpionSolitaireWeb.Pages;
 
@@ -65,8 +65,7 @@ public class IndexModel : PageModel
             Game = Games[sessionId];
         }
         ActiveSessions.Add(sessionId);
-        ErrorMessage = $"Number of possible moves: {Game.FindAllSegments().Count} " +
-                       $"(refresh page to see actual value)";
+        ErrorMessage = "";
     }
 
     public ActionResult OnPostDownload()

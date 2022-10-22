@@ -1,0 +1,39 @@
+﻿@page
+@using MorpionSolitaire
+@model ExploreModel
+@{
+    ViewData["Title"] = "Explore";
+}
+
+<div class="text-center">
+	<div id="grid-container">@Html.Raw(Model.GameGraph.Game.ToSvg())</div>
+	<p>Score: <b id="score-container">@Model.GameGraph.Game.GetScore()</b></p>
+	<p>Number of possible moves: <b id="move-count-container">@Model.GameGraph.GetNumberOfMoves()</b></p>
+	<p id="buttons-container"></p>
+
+	<script>
+		// get elements by id
+		const gridContainer = document.getElementById('grid-container');
+		const scoreContainer = document.getElementById('score-container');
+		const moveCountContainer = document.getElementById('move-count-container');
+		const buttonContainer = document.getElementById('buttons-container');
+		
+		// create a SVG group from a string
+		function newSVGElement(content) {
+            let element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            element.innerHTML = content;
+            return element;
+        }
+		// interactive elements
+		let interactiveLine = newSVGElement('<line x1="0" y1="0" x2="0" y2="0" style="stroke:blue;stroke-width:0.15" />');
+		let interactivePt = newSVGElement('<circle cx="0" cy="0" r="0.2" fill="blue" />');
+		
+		
+		// create a new button
+		function newButton() {
+			// create a button
+			// add event listener
+		}
+		
+	</script>
+</div>

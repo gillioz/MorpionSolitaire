@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\MorpionSolitaireGraph\MorpionSolitaireGraph.csproj" />
         <ProjectReference Include="..\MorpionSolitaire\MorpionSolitaire.csproj" />
     </ItemGroup>
 

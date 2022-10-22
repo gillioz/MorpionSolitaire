@@ -1,5 +1,4 @@
-﻿using System.Dynamic;
-using MorpionSolitaire;
+﻿using MorpionSolitaire;
 
 namespace MorpionSolitaireGraph;
 
@@ -12,9 +11,22 @@ public class GameGraph
         Grid? grid = null)
     {
         Game = new Game(segmentLength, noTouchingRule, grid);
-        Nodes = new List<GameNode>(); // initialize Nodes
+
+        var node = new GameNode();
+        var segments = Game.FindAllSegments();
+        foreach (var segment in segments)
+        {
+            node.GameLinks.Add(new GameLink(node, segment));
+        }
+        
+        Nodes = new List<GameNode>() { node };
     }
 
+    public int GetNumberOfMoves()
+    {
+        return Nodes.Last().GameLinks.Count;
+    }
+    
     public void Play(GameLink link)
     {
         throw new NotImplementedException();
