@@ -4,15 +4,28 @@ namespace MorpionSolitaireGraph;
 
 public class GameNode
 {
-    public List<GameLink> GameLinks { get; set; }
+    public GameNode? Parent { get; }
+    public Segment? Root { get; }
+    public List<Segment> Branches { get; }
 
-    public GameNode()
+    public GameNode(Game game)
     {
-        GameLinks = new List<GameLink>();
+        Parent = null;
+        Root = null;
+        Branches = game.FindAllSegments();
     }
     
-    public GameNode(Game game, GameLink link)
+    public GameNode(Game game, GameNode parent, Segment root)
     {
-        GameLinks = new List<GameLink>(); // to be implemented
+        Parent = parent;
+        Root = root;
+        Branches = game.FindNewSegments(root.Dot.Pt);
+        foreach (var segment in parent.Branches)
+        {
+            if (game.Image.IsValid(segment))
+            {
+                Branches.Add(segment);
+            }
+        }
     }
 }

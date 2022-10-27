@@ -261,6 +261,11 @@ public class Image
         return true;
     }
 
+    public bool IsValid(Segment segment)
+    {
+        return IsValid(segment.ToImageAction());
+    }
+
     public void Apply(ImageAction action, bool value = true)
     {
         foreach (ImageCoordinates pixel in action.Pixels)

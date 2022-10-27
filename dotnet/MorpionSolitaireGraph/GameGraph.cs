@@ -11,23 +11,15 @@ public class GameGraph
         Grid? grid = null)
     {
         Game = new Game(segmentLength, noTouchingRule, grid);
-
-        var node = new GameNode();
-        var segments = Game.FindAllSegments();
-        foreach (var segment in segments)
-        {
-            node.GameLinks.Add(new GameLink(node, segment));
-        }
-        
-        Nodes = new List<GameNode>() { node };
+        Nodes = new List<GameNode>() { new GameNode(Game) };
     }
 
     public int GetNumberOfMoves()
     {
-        return Nodes.Last().GameLinks.Count;
+        return Nodes.Last().Branches.Count;
     }
     
-    public void Play(GameLink link)
+    public void Play(GameBranch branch)
     {
         throw new NotImplementedException();
     }
