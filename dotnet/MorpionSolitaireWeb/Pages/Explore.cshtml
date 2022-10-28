@@ -1,5 +1,4 @@
 ﻿@page
-@using MorpionSolitaire
 @model ExploreModel
 @{
     ViewData["Title"] = "Explore";
@@ -9,7 +8,9 @@
 	<div id="grid-container">@Html.Raw(Model.GameGraph.Game.ToSvg())</div>
 	<p>Score: <b id="score-container">@Model.GameGraph.Game.GetScore()</b></p>
 	<p>Number of possible moves: <b id="move-count-container">@Model.GameGraph.GetNumberOfMoves()</b></p>
-	<p id="buttons-container"></p>
+	<p><button onclick="choseSegment()">Play</button></p>
+	<div class="btn-group" data-toggle="buttons" id="buttons-container"></div>
+	<p id="chosen-segment"></p>
 
 	<script>
 		// get elements by id
@@ -18,22 +19,46 @@
 		const moveCountContainer = document.getElementById('move-count-container');
 		const buttonContainer = document.getElementById('buttons-container');
 		
-		// create a SVG group from a string
-		function newSVGElement(content) {
-            let element = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            element.innerHTML = content;
-            return element;
-        }
-		// interactive elements
-		let interactiveLine = newSVGElement('<line x1="0" y1="0" x2="0" y2="0" style="stroke:blue;stroke-width:0.15" />');
-		let interactivePt = newSVGElement('<circle cx="0" cy="0" r="0.2" fill="blue" />');
+		// interactive segment
+		let interactiveSegment = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		interactiveSegment.innerHTML = 
+			'<line x1="0" y1="0" x2="0" y2="0" style="stroke:blue;stroke-width:0.15" />' +
+			'<circle cx="0" cy="0" r="0.2" fill="blue" />';
+		gridContainer.firstChild.appendChild(interactiveSegment);
 		
-		
-		// create a new button
-		function newButton() {
-			// create a button
-			// add event listener
+		function selectSegment(id, x1, y1, x2, y2, x, y) {
+			checkedButton = id;
+			interactiveSegment.firstElementChild.setAttribute('x1', x1);
+			interactiveSegment.firstElementChild.setAttribute('y1', y1);
+			interactiveSegment.firstElementChild.setAttribute('x2', x2);
+			interactiveSegment.firstElementChild.setAttribute('y2', y2);
+			interactiveSegment.lastElementChild.setAttribute('cx', x);
+			interactiveSegment.lastElementChild.setAttribute('cy', y);
 		}
 		
-	</script>
+		let checkedButton = 0;
+		let firstButton = true;
+		function addButton(id, label, x1, y1, x2, y2, x, y) {
+			let checked = '';
+			if (firstButton) {
+				checked = 'checked';
+				checkedButton = id;
+				firstButton = false;
+				selectSegment(id, x1, y1, x2, y2, x, y);
+			}
+			let newButton = document.createElement('label');
+			newButton.setAttribute('class', 'btn btn-primary');
+			newButton.innerHTML = `<input type="radio" name="segments" onclick="selectSegment(${id}, ${x1}, ${y1}, ${x2}, ${y2}, ${x}, ${y});" ${checked}> ${label}`;
+			buttonContainer.appendChild(newButton);
+		}
+		
+		function choseSegment() {
+			document.getElementById("chosen-segment").innerText = `chosen segment number: ${checkedButton}`;
+		}
+		
+		addButton(0, '', 0, 4, 4, 0, 2, 2);
+		addButton(1, '', 0, 2, 0, 6, 0, 2);
+		addButton(2, '', 0, 3, 0, 7, 0, 7);
+		addButton(3, '', 5, 9, 9, 5, 7, 7);
+			                                                                                                                           </script>
 </div>
