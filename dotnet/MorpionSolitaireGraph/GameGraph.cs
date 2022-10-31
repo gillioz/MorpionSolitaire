@@ -19,7 +19,12 @@ public class GameGraph
         return Nodes.Last().Branches.Count;
     }
     
-    public void Play(GameBranch branch)
+    public void Play(int index)
+    {
+        throw new NotImplementedException();
+    }
+    
+    public void PlayAtRandom()
     {
         throw new NotImplementedException();
     }

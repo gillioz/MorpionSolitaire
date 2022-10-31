@@ -66,4 +66,51 @@ public class ExploreModel : PageModel
         }
         ActiveSessions.Add(sessionId);
     }
+
+    public IActionResult OnGetLoad()
+    {
+        RestoreSession();
+        return new AjaxResponse(GameGraph).ToJsonResult();
+    }
+
+    public IActionResult OnGetPlay(int index)
+    {
+        RestoreSession();
+        GameGraph.Play(index);
+        return new AjaxResponse(GameGraph).ToJsonResult();
+    }
+
+    public IActionResult OnGetPlayAtRandom()
+    {
+        RestoreSession();
+        GameGraph.PlayAtRandom();
+        return new AjaxResponse(GameGraph).ToJsonResult();
+    }
+
+    private class AjaxResponse
+    {
+        public int Score { get; }
+        public string Grid { get; }
+        public List<string> Buttons { get; }
+
+        public AjaxResponse(GameGraph gameGraph)
+        {
+            Score = gameGraph.Nodes.Count - 1;
+            Grid = gameGraph.Game.ToSvg();
+            Buttons = new List<string>();
+            var branches = gameGraph.Nodes.Last().Branches;
+            for (int i = 0; i < branches.Count; i++)
+            {
+                Buttons.Add($"{i+1} " +
+                            $"{branches[i].Line.Pt1.X} {branches[i].Line.Pt1.Y} " +
+                            $"{branches[i].Line.Pt2.X} {branches[i].Line.Pt2.Y} " +
+                            $"{branches[i].Dot.Pt.X} {branches[i].Dot.Pt.Y}");
+            }
+        }
+        
+        public JsonResult ToJsonResult()
+        {
+            return new JsonResult(this);
+        }
+    }
 }

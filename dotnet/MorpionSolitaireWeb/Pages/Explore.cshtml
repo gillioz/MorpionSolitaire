@@ -5,12 +5,12 @@
 }
 
 <div class="text-center">
-	<div id="grid-container">@Html.Raw(Model.GameGraph.Game.ToSvg())</div>
-	<p>Score: <b id="score-container">@Model.GameGraph.Game.GetScore()</b></p>
-	<p>Number of possible moves: <b id="move-count-container">@Model.GameGraph.GetNumberOfMoves()</b></p>
-	<p><button onclick="choseSegment()">Play</button></p>
+	<div id="grid-container"></div>
+	<p>Score: <b id="score-container"></b></p>
+	<p>Number of possible moves: <b id="move-count-container"></b></p>
 	<div class="btn-group" data-toggle="buttons" id="buttons-container"></div>
-	<p id="chosen-segment"></p>
+	<p><button onclick="ajaxRequest('Play')">Play selected move</button></p>
+	<p><button onclick="ajaxRequest('PlayAtRandom')">Play a random move</button></p>
 
 	<script>
 		// get elements by id
@@ -24,21 +24,30 @@
 		interactiveSegment.innerHTML = 
 			'<line x1="0" y1="0" x2="0" y2="0" style="stroke:blue;stroke-width:0.15" />' +
 			'<circle cx="0" cy="0" r="0.2" fill="blue" />';
-		gridContainer.firstChild.appendChild(interactiveSegment);
+		let interactiveLine = interactiveSegment.firstElementChild;
+		let interactiveDot = interactiveSegment.lastElementChild;
 		
 		function selectSegment(id, x1, y1, x2, y2, x, y) {
 			checkedButton = id;
-			interactiveSegment.firstElementChild.setAttribute('x1', x1);
-			interactiveSegment.firstElementChild.setAttribute('y1', y1);
-			interactiveSegment.firstElementChild.setAttribute('x2', x2);
-			interactiveSegment.firstElementChild.setAttribute('y2', y2);
-			interactiveSegment.lastElementChild.setAttribute('cx', x);
-			interactiveSegment.lastElementChild.setAttribute('cy', y);
+			interactiveLine.setAttribute('x1', x1);
+			interactiveLine.setAttribute('y1', y1);
+			interactiveLine.setAttribute('x2', x2);
+			interactiveLine.setAttribute('y2', y2);
+			interactiveDot.setAttribute('cx', x);
+			interactiveDot.setAttribute('cy', y);
 		}
 		
 		let checkedButton = 0;
 		let firstButton = true;
-		function addButton(id, label, x1, y1, x2, y2, x, y) {
+		function addButton(id, data) {
+			let params = data.split(' ');
+			let label = params[0];
+			let x1 = params[1];
+			let y1 = params[2];
+			let x2 = params[3];
+			let y2 = params[4];
+			let x = params[5];
+			let y = params[6];
 			let checked = '';
 			if (firstButton) {
 				checked = 'checked';
@@ -52,13 +61,34 @@
 			buttonContainer.appendChild(newButton);
 		}
 		
-		function choseSegment() {
-			document.getElementById("chosen-segment").innerText = `chosen segment number: ${checkedButton}`;
+		// AJAX request
+		function ajaxRequest(handler) {
+			$.ajax({ 
+				url: '?handler=' + handler,
+				dataType: 'json',
+				success: function (data) {
+					responseHandler(data)
+				}
+			});
+		}
+		// function to handle AJAX response
+		function responseHandler(data) {
+			gridContainer.innerHTML = data.grid;
+			scoreContainer.innerText = data.score;
+			buttonContainer.innerText = "";
+			let nButtons = data.buttons.length;
+			moveCountContainer.innerText = nButtons;
+			firstButton = true;
+			for (var i = 0; i < data.buttons.length; i++) {
+				addButton(`${i}`, data.buttons[i]);
+			}
+			if (nButtons > 0) {
+				gridContainer.firstChild.appendChild(interactiveSegment);
+			}
 		}
 		
-		addButton(0, '', 0, 4, 4, 0, 2, 2);
-		addButton(1, '', 0, 2, 0, 6, 0, 2);
-		addButton(2, '', 0, 3, 0, 7, 0, 7);
-		addButton(3, '', 5, 9, 9, 5, 7, 7);
-			                                                                                                                           </script>
+		document.addEventListener("DOMContentLoaded", function() {
+          ajaxRequest('Load');
+        });
+	</script>
 </div>
