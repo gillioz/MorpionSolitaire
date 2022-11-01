@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Immutable;
+using System.Text.Json;
 
 namespace MorpionSolitaire;
 
@@ -10,6 +11,8 @@ public class Game
     public bool NoTouchingRule { get; }
     
     public const int PixelsPerUnit = 20;
+    private  IReadOnlyList<GridCoordinates> Directions = new List<GridCoordinates>
+        { new (1, 0), new (0, 1), new (1, 1), new (1, -1)};
 
     public Game(int segmentLength = 4, bool noTouchingRule = false,
         Grid? grid = null)
@@ -83,13 +86,18 @@ public class Game
         return segment;
     }
 
+    public void ApplySegment(Segment segment)
+    {
+        Grid.Apply(segment.ToGridAction());
+        Image.Apply(segment.ToImageAction());
+    }
+
     public bool TryApplySegment(GridCoordinates pt1, GridCoordinates pt2)
     {
         var segment = NewSegment(pt1, pt2);
         if (segment is not null)
         {
-            Grid.Apply(segment.ToGridAction());
-            Image.Apply(segment.ToImageAction());
+            ApplySegment(segment);
             return true;
         }
 
@@ -153,7 +161,29 @@ public class Game
     
     public List<Segment> FindNewSegments(GridCoordinates lastDot)
     {
-        throw new NotImplementedException();
+        var segments = new List<Segment>();
+        
+        foreach (var direction in Directions)
+        {
+            for (int position = 0; position <= SegmentLength; position++)
+            {
+                // TODO: implement multiplication and addition of GridCoordinates
+                // var pt1 = lastDot + position * direction;
+                // var pt2 = lastDot + (SegmentLength - position) * direction;
+                var pt1 = new GridCoordinates(lastDot.X + position * direction.X,
+                    lastDot.Y + position * direction.Y);
+                var pt2 = new GridCoordinates(lastDot.X + (position - SegmentLength) * direction.X,
+                    lastDot.Y + (position - SegmentLength) * direction.Y);
+                
+                var segment = NewSegment(pt1, pt2);
+                if (segment is not null)
+                {
+                    segments.Add(segment);
+                }
+            }
+        }
+
+        return segments;
     }
 
     public void Undo(int steps = 1)

@@ -73,10 +73,21 @@ public class ExploreModel : PageModel
         return new AjaxResponse(GameGraph).ToJsonResult();
     }
 
-    public IActionResult OnGetPlay(int index)
+    public IActionResult OnGetPlay(string id)
     {
         RestoreSession();
-        GameGraph.Play(index);
+        var index = int.Parse(id);
+        if (index >= 0 && index < GameGraph.Node.Branches.Count)
+        {
+            GameGraph.Play(index);
+        }
+        return new AjaxResponse(GameGraph).ToJsonResult();
+    }
+
+    public IActionResult OnGetPlayOneAtRandom()
+    {
+        RestoreSession();
+        GameGraph.PlayAtRandom(1);
         return new AjaxResponse(GameGraph).ToJsonResult();
     }
 
@@ -95,10 +106,10 @@ public class ExploreModel : PageModel
 
         public AjaxResponse(GameGraph gameGraph)
         {
-            Score = gameGraph.Nodes.Count - 1;
+            Score = gameGraph.Game.GetScore();
             Grid = gameGraph.Game.ToSvg();
             Buttons = new List<string>();
-            var branches = gameGraph.Nodes.Last().Branches;
+            var branches = gameGraph.Node.Branches;
             for (int i = 0; i < branches.Count; i++)
             {
                 Buttons.Add($"{i+1} " +

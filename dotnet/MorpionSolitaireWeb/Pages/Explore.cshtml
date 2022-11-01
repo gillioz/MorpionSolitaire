@@ -9,9 +9,17 @@
 	<p>Score: <b id="score-container"></b></p>
 	<p>Number of possible moves: <b id="move-count-container"></b></p>
 	<div class="btn-group" data-toggle="buttons" id="buttons-container"></div>
-	<p><button onclick="ajaxRequest('Play')">Play selected move</button></p>
-	<p><button onclick="ajaxRequest('PlayAtRandom')">Play a random move</button></p>
-
+	<p><button onclick="playSelected()">Play selected move</button></p>
+	<p>
+		<button onclick="ajaxRequest('PlayOneAtRandom')">Pick one move at random</button>
+		<button onclick="ajaxRequest('PlayAtRandom')">Play all moves at random</button>
+	</p>
+	<p>
+    	<button onclick="ajaxRequest('Undo')" disabled>Undo last move</button>
+    	<button onclick="ajaxRequest('UndoFive')" disabled>Undo last five moves</button>
+    	<button onclick="ajaxRequest('Restart')" disabled>Restart</button>
+    </p>
+	
 	<script>
 		// get elements by id
 		const gridContainer = document.getElementById('grid-container');
@@ -27,6 +35,7 @@
 		let interactiveLine = interactiveSegment.firstElementChild;
 		let interactiveDot = interactiveSegment.lastElementChild;
 		
+		let checkedButton = -1;
 		function selectSegment(id, x1, y1, x2, y2, x, y) {
 			checkedButton = id;
 			interactiveLine.setAttribute('x1', x1);
@@ -37,7 +46,6 @@
 			interactiveDot.setAttribute('cy', y);
 		}
 		
-		let checkedButton = 0;
 		let firstButton = true;
 		function addButton(id, data) {
 			let params = data.split(' ');
@@ -51,7 +59,6 @@
 			let checked = '';
 			if (firstButton) {
 				checked = 'checked';
-				checkedButton = id;
 				firstButton = false;
 				selectSegment(id, x1, y1, x2, y2, x, y);
 			}
@@ -65,7 +72,6 @@
 		function ajaxRequest(handler) {
 			$.ajax({ 
 				url: '?handler=' + handler,
-				dataType: 'json',
 				success: function (data) {
 					responseHandler(data)
 				}
@@ -79,12 +85,17 @@
 			let nButtons = data.buttons.length;
 			moveCountContainer.innerText = nButtons;
 			firstButton = true;
+			checkedButton = -1;
 			for (var i = 0; i < data.buttons.length; i++) {
 				addButton(`${i}`, data.buttons[i]);
 			}
 			if (nButtons > 0) {
 				gridContainer.firstChild.appendChild(interactiveSegment);
 			}
+		}
+		
+		function playSelected(){
+			ajaxRequest(`Play&id=${checkedButton}`);
 		}
 		
 		document.addEventListener("DOMContentLoaded", function() {
