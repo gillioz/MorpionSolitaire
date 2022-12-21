@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using MorpionSolitaire;
 using MorpionSolitaireGraph;
 using System.Collections.ObjectModel;
-using System.Text;
 
 namespace MorpionSolitaireWeb.Pages;
 
