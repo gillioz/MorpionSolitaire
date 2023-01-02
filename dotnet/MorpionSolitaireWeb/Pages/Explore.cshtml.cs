@@ -97,6 +97,27 @@ public class ExploreModel : PageModel
         return new AjaxResponse(GameGraph).ToJsonResult();
     }
 
+    public IActionResult OnGetUndo()
+    {
+        RestoreSession();
+        GameGraph.Undo();
+        return new AjaxResponse(GameGraph).ToJsonResult();
+    }
+
+    public IActionResult OnGetUndoFive()
+    {
+        RestoreSession();
+        GameGraph.Undo(5);
+        return new AjaxResponse(GameGraph).ToJsonResult();
+    }
+
+    public IActionResult OnGetRestart()
+    {
+        RestoreSession();
+        GameGraph.Undo(GameGraph.Game.GetScore());
+        return new AjaxResponse(GameGraph).ToJsonResult();
+    }
+
     private class AjaxResponse
     {
         public int Score { get; }

@@ -45,4 +45,21 @@ public class GameGraph
         Play(index);
         PlayAtRandom();
     }
+
+    public void Undo(int steps = 1)
+    {
+        while (steps > 0)
+        {
+            if (Node.Parent is null || Node.Root is null)
+            {
+                return;
+            }
+
+            Game.Grid.Actions.RemoveAt(Game.Grid.Actions.Count - 1);
+            Game.Image.Apply(Node.Root.ToImageAction(), false);
+            Node = Node.Parent;
+
+            steps -= 1;
+        }
+    }
 }
