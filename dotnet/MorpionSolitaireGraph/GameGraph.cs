@@ -62,4 +62,9 @@ public class GameGraph
             steps -= 1;
         }
     }
+
+    public void Restart()
+    {
+        Undo(Game.GetScore());
+    }
 }

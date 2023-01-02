@@ -16,11 +16,13 @@ var occurenceCount = new OccurenceCount();
 watch.Start();
 long step = nmax < 100 ? 100 : nmax / 100;
 long completedSteps = 0;
+var graph = new GameGraph();
 for (long n = 0; n < nmax; n++)
 {
-    var graph = new GameGraph();
     graph.PlayAtRandom();
     var score = graph.Game.GetScore();
+    graph = new GameGraph();
+    // graph.Restart();
     occurenceCount.Add(score);
     var newsteps = (n - completedSteps) / step;
     if (newsteps > 0)

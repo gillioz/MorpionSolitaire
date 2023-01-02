@@ -114,7 +114,7 @@ public class ExploreModel : PageModel
     public IActionResult OnGetRestart()
     {
         RestoreSession();
-        GameGraph.Undo(GameGraph.Game.GetScore());
+        GameGraph.Restart();
         return new AjaxResponse(GameGraph).ToJsonResult();
     }
 
