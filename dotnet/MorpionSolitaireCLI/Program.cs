@@ -1,68 +1,93 @@
 ﻿using MorpionSolitaireGraph;
 
-const int segmentLength = 4;
-const bool noTouchingRule = false;
+namespace MorpionSolitaireCLI;
 
-long nmax = 100000;
-var filename = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../../../data/count.csv");
-var watch = new System.Diagnostics.Stopwatch();
-
-Console.WriteLine($"Runing {nmax} games");
-Console.WriteLine(
-    "0%      10%       20%       30%       40%       50%       60%       70%       80%       90%     100%");
-Console.WriteLine(
-    "---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+");
-var occurenceCount = new OccurenceCount();
-watch.Start();
-long step = nmax < 100 ? 100 : nmax / 100;
-long completedSteps = 0;
-var graph = new GameGraph();
-for (long n = 0; n < nmax; n++)
+public class Program
 {
-    graph.PlayAtRandom();
-    var score = graph.Game.GetScore();
-    graph = new GameGraph();
-    // graph.Restart();
-    occurenceCount.Add(score);
-    var newsteps = (n - completedSteps) / step;
-    if (newsteps > 0)
+    private static long _n;
+    private static Timing? _timing;
+    private static ProgressBar? _progressBar;
+    private static string _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
+    private static Histogram? _maxHistogram;
+
+    static void Main(string[] args)
     {
-        Console.Write(new string('*', (int)newsteps));
-        completedSteps += newsteps * step;
-    }
-}
-Console.WriteLine();
-watch.Stop();
-var elapsedSeconds = Convert.ToDouble(watch.ElapsedMilliseconds) / 1000.0;
-var gamesPerSecond = Convert.ToInt32(Convert.ToDouble(nmax) / elapsedSeconds);
+        ParseArguments(args);
+ 
+        Console.WriteLine($"Running {_n} games");
 
-Console.WriteLine($"Running time: {elapsedSeconds} s");
-Console.WriteLine($"Games per second: {gamesPerSecond}");
-
-Console.Write($"Writing file to '{filename}'...");
-File.WriteAllLines(filename, occurenceCount.Value.Select(x => x.ToString()));
-Console.WriteLine("done");
-
-public class OccurenceCount
-{
-    public List<int> Value { get; }
-
-    public OccurenceCount()
-    {
-        Value = new List<int>(new int[80]);
-    }
-
-    public void Add(int index)
-    {
-        if (index <= 0) return;
-        if (index > Value.Count)
+        _progressBar?.Initialize(_n);
+        _timing?.Start();
+        var graph = new GameGraph();
+        for (long n = 0; n < _n; n++)
         {
-            Value.Add(0);
-            Add(index);
+            graph.PlayAtRandom();
+            var score = graph.Game.GetScore();
+            graph = new GameGraph();
+            // graph.Restart();
+            
+            _maxHistogram?.Add(score);
+            _progressBar?.Iterate();
         }
-        else
+        _timing?.Stop();
+
+        _progressBar?.Terminate();
+        _timing?.Print(_n);
+
+        _maxHistogram?.Save();
+    }
+
+    private static void ParseArguments(string[] args)
+    {
+        if (args.Length == 0)
         {
-            Value[index - 1] += 1;
+            Console.WriteLine("Usage example:");
+            Console.WriteLine("MorpionSolitaireCLI.exe -n 1000 --timing --progress --path data/ --maxHistogram");
+            return;
+        }
+
+        var index = 0;
+        while (index <= args.Length)
+        {
+            var flag = args[index];
+            if (flag == "-n")
+            {
+                index += 1;
+                if (index >= args.Length)
+                {
+                    throw new ArgumentException();
+                }
+                _n = long.Parse(args[index]);
+            }
+            else if (flag == "--timing")
+            {
+                _timing = new Timing();
+            }
+            else if (flag == "--progress")
+            {
+                _progressBar = new ProgressBar();
+            }
+            else if (flag == "--path")
+            {
+                index += 1;
+                if (index >= args.Length)
+                {
+                    throw new ArgumentException();
+                }
+                _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, args[index]);
+                Console.WriteLine($"Writing all data to : '{_dataFolder}'");
+            }
+            else if (flag == "--maxHistogram")
+            {
+                _maxHistogram = new Histogram(Path.Combine(_dataFolder, "maxHistogram.csv"));
+            }
+            else
+            {
+                Console.WriteLine($"Unknown flag '{flag}'");
+                throw new ArgumentException();
+            }
+
+            index += 1;
         }
     }
 }
