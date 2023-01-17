@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace MorpionSolitaire;
 
@@ -36,41 +35,35 @@ public class Game
             throw new Exception("Attempt to create a game with an invalid grid");
         }
 
-        var setupAction = grid.Actions.First();
-        var dots = setupAction.Elements.OfType<GridDot>().ToList();
-        foreach (var dot in dots)
+        var counter = 0;
+        foreach (var action in Grid.Actions.Reverse())
         {
-            Image.Set(new ImageCoordinates(dot.Pt), true);
-        }
-        var lines = setupAction.Elements.OfType<GridLine>().ToList();
-        if (lines.Count > 0)
-        {
-            throw new NotImplementedException();
-        }
-
-        for (int i = 1; i < grid.Actions.Count; i++)
-        {
-            var action = grid.Actions[i];
-            dots = action.Elements.OfType<GridDot>().ToList();
-            if (dots.Count != 1)
+            var dots = action.Elements.OfType<GridDot>().ToList();
+            var lines = action.Elements.OfType<GridLine>().ToList();
+            
+            if ((counter == 0 && lines.Count > 0) 
+                || (counter > 0 && (lines.Count != 1 || dots.Count != 1)))
             {
-                throw new Exception($"Invalid number of dots at stage {i}.");
+                throw new Exception($"Invalid grid element at stage {counter}.");
             }
-            lines = action.Elements.OfType<GridLine>().ToList();
-            if (lines.Count != 1)
+            foreach (var dot in dots)
             {
-                throw new Exception($"Invalid number of lines at stage {i}.");
+                Image.Set(new ImageCoordinates(dot.Pt), true);
             }
 
-            var line = lines.First();
-            var pt = dots.First().Pt;
-
-            var segment = NewSegment(line.Pt1, line.Pt2);
-            if (segment is null)
+            if (counter > 0)
             {
-                throw new Exception("Failed to load the grid");
+                var line = lines.Single();
+                var newPoint = dots.Single().Pt;
+                var segment = NewSegment(line.Pt1, line.Pt2, newPoint);
+                if (segment is null)
+                {
+                    throw new Exception($"Invalid segment at stage {counter}.");
+                }
+                Image.Apply(segment.ToImageAction());
             }
-            Image.Apply(segment.ToImageAction());
+
+            counter += 1;
         }
     }
 

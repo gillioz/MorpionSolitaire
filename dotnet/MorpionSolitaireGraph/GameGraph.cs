@@ -88,7 +88,7 @@ public class GameGraph
                 return;
             }
 
-            Game.Grid.Actions.RemoveAt(Game.Grid.Actions.Count - 1);
+            Game.Grid.Actions.Pop();
             Game.Image.Apply(Node.Root.ToImageAction(), false);
             Node = Node.Parent;
 

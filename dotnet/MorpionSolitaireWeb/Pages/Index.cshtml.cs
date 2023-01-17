@@ -190,7 +190,7 @@ public class IndexModel : PageModel
         public AddToGridAjaxResponse(Game game) : base(game)
         {
             Type = "Add";
-            NewElement = game.Grid.Actions.Last().ToSvg();
+            NewElement = game.Grid.Actions.Peek().ToSvg();
         }
     }
 

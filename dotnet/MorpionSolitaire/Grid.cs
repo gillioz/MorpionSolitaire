@@ -1,14 +1,12 @@
-﻿using System.Reflection;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class Grid
 {
-    public List<GridAction> Actions { get; }
+    public Stack<GridAction> Actions { get; }
 
     public Grid()
     {
-        Actions = new List<GridAction>();
+        Actions = new Stack<GridAction>();
     }
 
     private static Grid GridFromCoordinates(List<GridCoordinates> dots)
@@ -20,7 +18,7 @@ public class Grid
         }
 
         var grid = new Grid();
-        grid.Actions.Add(action);
+        grid.Actions.Push(action);
         return grid;
     }
     
@@ -57,14 +55,19 @@ public class Grid
 
     public void Apply(GridAction action)
     {
-        Actions.Add(action);
+        Actions.Push(action);
     }
 
     public void Undo(int steps = 1)
     {
-        var index = Math.Max(Actions.Count - steps, 1);
-        var count = Actions.Count - index;
-        Actions.RemoveRange(index, count);
+        if (Actions.Count > 0)
+        {
+            Actions.Pop();
+            if (steps > 1)
+            {
+                Undo(steps - 1);
+            }
+        }
     }
     
     public GridFootprint GetFootprint()
