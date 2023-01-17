@@ -21,7 +21,7 @@ public class IndexModel : PageModel
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
-        GameGraph = new GameGraph();
+        GameGraph = new GameGraph(Grid.Cross());
         ErrorMessage = "";
     }
 
@@ -48,7 +48,7 @@ public class IndexModel : PageModel
     
     public GridFootprint Footprint()
     {
-        return GameGraph.Game.GetFootPrint();
+        return GameGraph.GetFootPrint();
     }
     
     public void OnGet()
@@ -58,7 +58,7 @@ public class IndexModel : PageModel
         {
             sessionId = Guid.NewGuid().ToString();
             HttpContext.Session.SetString("ID", sessionId);
-            GameGraph = new GameGraph();
+            GameGraph = new GameGraph(Grid.Cross());
             GameGraphes[sessionId] = GameGraph;
         }
         else
@@ -72,7 +72,7 @@ public class IndexModel : PageModel
     public ActionResult OnPostDownload()
     {
         RestoreSession();
-        var jsonString = GameGraph.Game.ToJson();
+        var jsonString = GameGraph.ToJson();
         var bytes = Encoding.UTF8.GetBytes(jsonString);
         var file = "MorpionSolitaire-" +
             DateTime.Now.ToString("yyyy-MM-dd-HHmm") +
@@ -103,7 +103,7 @@ public class IndexModel : PageModel
                 jsonString = reader.ReadToEnd();
             }
 
-            GameGraph = new GameGraph(Game.FromJson(jsonString));
+            GameGraph = new GameGraph(GameDto.FromJson(jsonString).ToGrid());
             GameGraphes[sessionId] = GameGraph;
             return;
         }
@@ -121,10 +121,10 @@ public class IndexModel : PageModel
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
-            return new AddToGridAjaxResponse(GameGraph.Game).ToJsonResult();
+            return new AddToGridAjaxResponse(GameGraph).ToJsonResult();
         }
 
-        return new AjaxResponse(GameGraph.Game).ToJsonResult();
+        return new AjaxResponse(GameGraph).ToJsonResult();
     }
 
     public IActionResult OnGetRestart()
@@ -132,27 +132,27 @@ public class IndexModel : PageModel
         var sessionId = RestoreSession();
         GameGraph.Restart();
         GameGraphes[sessionId] = GameGraph;
-        return new ReplaceGridAjaxResponse(GameGraph.Game).ToJsonResult();
+        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
     }
 
     public IActionResult OnGetReload()
     {
         RestoreSession();
-        return new ReplaceGridAjaxResponse(GameGraph.Game).ToJsonResult();
+        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
     }
 
     public IActionResult OnGetUndo()
     {
         RestoreSession();
         GameGraph.Undo();
-        return new ReplaceGridAjaxResponse(GameGraph.Game).ToJsonResult();
+        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
     }
 
     public IActionResult OnGetUndoFive()
     {
         RestoreSession();
         GameGraph.Undo(5);
-        return new ReplaceGridAjaxResponse(GameGraph.Game).ToJsonResult();
+        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
     }
     
     private class AjaxResponse

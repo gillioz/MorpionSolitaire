@@ -1,4 +1,6 @@
-﻿namespace MorpionSolitaire;
+﻿using System.Text.Json;
+
+namespace MorpionSolitaire;
 
 public class GameDto
 {
@@ -21,8 +23,8 @@ public class GameDto
     {
         Title = "Morpion Solitaire";
         Version = "v1";
-        SegmentLength = game.SegmentLength;
-        NoTouchingRule = game.NoTouchingRule;
+        SegmentLength = game.Grid.SegmentLength;
+        NoTouchingRule = game.Grid.NoTouchingRule;
         Grid = new List<GridActionDto>();
         foreach (var action in game.Grid.Actions)
         {
@@ -30,7 +32,17 @@ public class GameDto
         }
     }
 
-    public Game ToGame()
+    public static GameDto FromJson(string json)
+    {
+        var gameDto = JsonSerializer.Deserialize<GameDto>(json);
+        if (gameDto is null)
+        {
+            throw new Exception("Could not parse JSON file.");
+        }
+        return gameDto;
+    }
+
+    public Grid ToGrid()
     {
         if (Title != "Morpion Solitaire")
         {
@@ -42,14 +54,14 @@ public class GameDto
             throw new Exception("Version conflict: only version 'v1' is supported.");
         }
 
-        var grid = new Grid();
+        var grid = new Grid(SegmentLength, NoTouchingRule);
 
         foreach (var actionJson in Grid)
         {
             grid.Apply(actionJson.ToGridAction());
         }
 
-        return new Game(SegmentLength, NoTouchingRule, grid);
+        return grid;
     }
 }
 

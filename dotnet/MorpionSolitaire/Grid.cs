@@ -2,29 +2,31 @@
 
 public class Grid
 {
+    public int SegmentLength { get; }
+    public bool NoTouchingRule { get; }
     public Stack<GridAction> Actions { get; }
 
-    public Grid()
+    public Grid(int segmentLength, bool noTouchingRule, List<GridCoordinates>? dots = null)
     {
+        SegmentLength = segmentLength;
+        NoTouchingRule = noTouchingRule;
         Actions = new Stack<GridAction>();
-    }
 
-    private static Grid GridFromCoordinates(List<GridCoordinates> dots)
-    {
-        var action = new GridAction();
-        foreach (GridCoordinates dot in dots)
+        if (dots is not null)
         {
-            action.Add(new GridDot(dot));
-        }
+            var initialAction = new GridAction();
+            foreach (GridCoordinates dot in dots)
+            {
+                initialAction.Add(new GridDot(dot));
+            }
 
-        var grid = new Grid();
-        grid.Actions.Push(action);
-        return grid;
+            Actions.Push(initialAction);
+        }
     }
     
-    public static Grid Cross()
+    public static Grid Cross(bool noTouchingRule = false)
     {
-        return GridFromCoordinates(new List<GridCoordinates>()
+        return new Grid(4, noTouchingRule, new List<GridCoordinates>()
         {
             new(3, 0), new(4, 0), new(5, 0), new(6, 0),
             new(3, 1), new(6, 1), new(3, 2), new(6, 2),
@@ -38,9 +40,9 @@ public class Grid
         });
     }
     
-    public static Grid Pipe()
+    public static Grid Pipe(bool noTouchingRule = false)
     {
-        return GridFromCoordinates(new List<GridCoordinates>()
+        return new Grid(4, noTouchingRule, new List<GridCoordinates>()
         {
             new(3, 0), new(4, 0), new(5, 0), new(6, 0),
             new(2, 1), new(7, 1), new(1, 2), new(8, 2),

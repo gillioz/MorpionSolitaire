@@ -20,7 +20,7 @@ public class ExploreModel : PageModel
     public ExploreModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
-        GameGraph = new GameGraph();
+        GameGraph = new GameGraph(Grid.Cross());
     }
 
     private string RestoreSession()
@@ -46,7 +46,7 @@ public class ExploreModel : PageModel
     
     public GridFootprint Footprint()
     {
-        return GameGraph.Game.GetFootPrint();
+        return GameGraph.GetFootPrint();
     }
     
     public void OnGet()
@@ -56,7 +56,7 @@ public class ExploreModel : PageModel
         {
             sessionId = Guid.NewGuid().ToString();
             HttpContext.Session.SetString("GraphID", sessionId);
-            GameGraph = new GameGraph();
+            GameGraph = new GameGraph(Grid.Cross());
             GameGraphes[sessionId] = GameGraph;
         }
         else
@@ -76,7 +76,7 @@ public class ExploreModel : PageModel
     {
         RestoreSession();
         var index = int.Parse(id);
-        if (index >= 0 && index < GameGraph.Node.Branches.Count)
+        if (index >= 0 && index < GameGraph.Nodes.Peek().Branches.Count)
         {
             GameGraph.Play(index);
         }
@@ -126,10 +126,10 @@ public class ExploreModel : PageModel
 
         public AjaxResponse(GameGraph gameGraph)
         {
-            Score = gameGraph.Game.GetScore();
-            Grid = gameGraph.Game.ToSvg();
+            Score = gameGraph.GetScore();
+            Grid = gameGraph.ToSvg();
             Buttons = new List<string>();
-            var branches = gameGraph.Node.Branches;
+            var branches = gameGraph.Nodes.Peek().Branches;
             for (int i = 0; i < branches.Count; i++)
             {
                 Buttons.Add($"{i+1} " +

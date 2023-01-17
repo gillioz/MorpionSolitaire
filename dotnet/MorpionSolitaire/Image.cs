@@ -23,7 +23,7 @@ public class Image
         return new bool[_dimensions.X, _dimensions.Y];
     }
 
-    public void Load(Grid grid, int segmentLength, bool noTouchingRule)
+    public void Load(Grid grid)
     {
         _image = EmptyImage();
         
@@ -39,7 +39,7 @@ public class Image
             if (gridLines.Count == 1)
             {
                 var segment = NewSegment(gridLines.First().Pt1, gridLines.First().Pt2,
-                    segmentLength, noTouchingRule);
+                    grid.SegmentLength, grid.NoTouchingRule);
                 if (segment is null)
                 {
                     throw new Exception("Invalid segment");

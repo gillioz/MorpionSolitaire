@@ -2,44 +2,73 @@
 
 namespace MorpionSolitaireGraph;
 
-public class GameGraph
+public class GameGraph : Game
 {
-    public GameNode Node { get; set; }
-    public Game Game { get; set; }
+    public Stack<GameNode> Nodes { get; }
 
-    public GameGraph(int segmentLength = 4, bool noTouchingRule = false,
-        Grid? grid = null)
+    public GameGraph(Grid grid) : base(grid.SegmentLength, grid.NoTouchingRule)
     {
-        Game = new Game(segmentLength, noTouchingRule, grid);
-        Node = new GameNode(Game);
-    }
+        Grid = grid;
+        Image = new Image(dimensions: new GridCoordinates(20, 20),
+            origin: new GridCoordinates(5, 5));
+        Nodes = new Stack<GameNode>();
 
-    public GameGraph(Game game)
-    {
-        var nodes = new Stack<GameNode>();
-        nodes.Push(new GameNode(game));
-        while (game.GetScore() > 0)
+        if (grid.Actions.Count == 0)
         {
-            game.Undo();
+            throw new Exception("Attempt to create a game with an invalid grid");
         }
-        
-        // TODO: implement proper chain of nodes
+
+        var counter = 0;
+        foreach (var action in Grid.Actions.Reverse())
+        {
+            var dots = action.Elements.OfType<GridDot>().ToList();
+            var lines = action.Elements.OfType<GridLine>().ToList();
+            
+            if ((counter == 0 && lines.Count > 0) 
+                || (counter > 0 && (lines.Count != 1 || dots.Count != 1)))
+            {
+                throw new Exception($"Invalid grid element at stage {counter}.");
+            }
+            foreach (var dot in dots)
+            {
+                Image.Set(new ImageCoordinates(dot.Pt), true);
+            }
+
+            if (counter == 0)
+            {
+                Nodes.Push(new GameNode(this));
+            }
+            else
+            {
+                var line = lines.Single();
+                var newPoint = dots.Single().Pt;
+                var segment = NewSegment(line.Pt1, line.Pt2, newPoint);
+                if (segment is null)
+                {
+                    throw new Exception($"Invalid segment at stage {counter}.");
+                }
+                Image.Apply(segment.ToImageAction());
+                Nodes.Push(new GameNode(this, Nodes.Peek(), segment));
+            }
+
+            counter += 1;
+        }
     }
 
     public int GetNumberOfMoves()
     {
-        return Node.Branches.Count;
+        return Nodes.Peek().Branches.Count;
     }
 
     public void Play(Segment segment)
     {
-        Game.ApplySegment(segment);
-        Node = new GameNode(Game, Node, segment);
+        ApplySegment(segment);
+        Nodes.Push(new GameNode(this, Nodes.Peek(), segment));
     }
 
     public void Play(int index)
     {
-        var segment = Node.Branches[index];
+        var segment = Nodes.Peek().Branches[index];
         Play(segment);
     }
 
@@ -47,7 +76,7 @@ public class GameGraph
     {
         var line = new GridLine(pt1, pt2);
 
-        foreach (var segment in Node.Branches)
+        foreach (var segment in Nodes.Peek().Branches)
         {
             if (segment.Line == line)
             {
@@ -61,48 +90,41 @@ public class GameGraph
 
     public void PlayAtRandom(int n)
     {
-        if (n <= 0 || Node.Branches.Count <= 0) return;
+        if (n <= 0 || Nodes.Peek().Branches.Count <= 0) return;
         
         var rand = new Random();
-        var index = rand.Next(0, Node.Branches.Count);
+        var index = rand.Next(0, Nodes.Peek().Branches.Count);
         Play(index);
         PlayAtRandom(n - 1);
     }
 
     public void PlayAtRandom()
     {
-        if (Node.Branches.Count <= 0) return;
+        if (Nodes.Peek().Branches.Count <= 0) return;
         
         var rand = new Random();
-        var index = rand.Next(0, Node.Branches.Count);
+        var index = rand.Next(0, Nodes.Peek().Branches.Count);
         Play(index);
         PlayAtRandom();
     }
 
-    public void Undo(int steps = 1)
+    public new void Undo(int steps = 1)
     {
-        while (steps > 0)
+        while (steps != 0)
         {
-            if (Node.Parent is null || Node.Root is null)
-            {
-                return;
-            }
+            if (Nodes.Count == 1 || Grid.Actions.Count == 1) return;
 
-            Game.Grid.Actions.Pop();
-            Game.Image.Apply(Node.Root.ToImageAction(), false);
-            Node = Node.Parent;
+            Grid.Actions.Pop();
+            var node = Nodes.Pop();
+            if (node.Root is null) throw new Exception("Missing Root in GameNode");
+            Image.Apply(node.Root.ToImageAction(), false);
 
             steps -= 1;
         }
     }
 
-    public int GetScore()
-    {
-        return Game.GetScore();
-    }
-
     public void Restart()
     {
-        Undo(Game.GetScore());
+        Undo(GetScore());
     }
 }

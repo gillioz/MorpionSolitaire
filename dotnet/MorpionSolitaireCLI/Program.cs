@@ -1,4 +1,5 @@
-﻿using MorpionSolitaireGraph;
+﻿using MorpionSolitaire;
+using MorpionSolitaireGraph;
 
 namespace MorpionSolitaireCLI;
 
@@ -18,12 +19,12 @@ public class Program
 
         _progressBar?.Initialize(_n);
         _timing?.Start();
-        var graph = new GameGraph();
+        var graph = new GameGraph(Grid.Cross());
         for (long n = 0; n < _n; n++)
         {
             graph.PlayAtRandom();
-            var score = graph.Game.GetScore();
-            graph = new GameGraph();
+            var score = graph.GetScore();
+            graph = new GameGraph(Grid.Cross());
             // graph.Restart();
             
             _maxHistogram?.Add(score);

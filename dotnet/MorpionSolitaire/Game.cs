@@ -4,28 +4,22 @@ namespace MorpionSolitaire;
 
 public class Game
 {
-    public Grid Grid { get; }
-    public Image Image { get; }
-    public int SegmentLength { get; }
-    public bool NoTouchingRule { get; }
+    public Grid Grid { get; init; }
+    public Image Image { get; init; }
     
     public const int PixelsPerUnit = 20;
     private  IReadOnlyList<GridCoordinates> Directions = new List<GridCoordinates>
         { new (1, 0), new (0, 1), new (1, 1), new (1, -1)};
 
-    public Game(int segmentLength = 4, bool noTouchingRule = false,
-        Grid? grid = null)
+    protected Game(int segmentLength, bool noTouchingRule)
     {
-        if (grid is null)
-        {
-            grid = segmentLength switch
-            {
-                4 => Grid.Cross(),
-                _ => throw new Exception($"No default grid implemented with segment length {segmentLength}.")
-            };
-        }
-        SegmentLength = segmentLength;
-        NoTouchingRule = noTouchingRule;
+        Grid = new Grid(segmentLength, noTouchingRule);
+        Image = new Image(dimensions: new GridCoordinates(20, 20),
+            origin: new GridCoordinates(5, 5));
+    }
+
+    public Game(Grid grid)
+    {
         Grid = grid;
         Image = new Image(dimensions: new GridCoordinates(20, 20),
             origin: new GridCoordinates(5, 5));
@@ -69,7 +63,7 @@ public class Game
 
     public Segment? NewSegment(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
     {
-        var segment = Image.NewSegment(pt1, pt2, SegmentLength, NoTouchingRule);
+        var segment = Image.NewSegment(pt1, pt2, Grid.SegmentLength, Grid.NoTouchingRule);
         if (newPt.HasValue && segment is not null && !segment.Dot.Pt.Equals(newPt))
         {
             return null;
@@ -125,26 +119,26 @@ public class Game
 
         for (var x = footprint.Xmin; x <= footprint.Xmax; x++)
         {
-            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - SegmentLength + 1; y++)
+            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - Grid.SegmentLength + 1; y++)
             {
-                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x, y + SegmentLength), segments);
+                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x, y + Grid.SegmentLength), segments);
             }
         }
 
         for (var y = footprint.Ymin; y <= footprint.Ymax; y++)
         {
-            for (var x = footprint.Xmin - 1; x <= footprint.Xmax - SegmentLength + 1; x++)
+            for (var x = footprint.Xmin - 1; x <= footprint.Xmax - Grid.SegmentLength + 1; x++)
             {
-                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + SegmentLength, y), segments);
+                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + Grid.SegmentLength, y), segments);
             }
         }
 
-        for (var x = footprint.Xmin - 1; x <= footprint.Xmax - SegmentLength + 1; x++)
+        for (var x = footprint.Xmin - 1; x <= footprint.Xmax - Grid.SegmentLength + 1; x++)
         {
-            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - SegmentLength + 1; y++)
+            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - Grid.SegmentLength + 1; y++)
             {
-                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + SegmentLength, y + SegmentLength), segments);
-                TryAddSegment(new GridCoordinates(x, y + SegmentLength), new GridCoordinates(x + SegmentLength, y), segments);
+                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + Grid.SegmentLength, y + Grid.SegmentLength), segments);
+                TryAddSegment(new GridCoordinates(x, y + Grid.SegmentLength), new GridCoordinates(x + Grid.SegmentLength, y), segments);
             }
         }
 
@@ -157,15 +151,15 @@ public class Game
         
         foreach (var direction in Directions)
         {
-            for (int position = 0; position <= SegmentLength; position++)
+            for (int position = 0; position <= Grid.SegmentLength; position++)
             {
                 // TODO: implement multiplication and addition of GridCoordinates
                 // var pt1 = lastDot + position * direction;
                 // var pt2 = lastDot + (SegmentLength - position) * direction;
                 var pt1 = new GridCoordinates(lastDot.X + position * direction.X,
                     lastDot.Y + position * direction.Y);
-                var pt2 = new GridCoordinates(lastDot.X + (position - SegmentLength) * direction.X,
-                    lastDot.Y + (position - SegmentLength) * direction.Y);
+                var pt2 = new GridCoordinates(lastDot.X + (position - Grid.SegmentLength) * direction.X,
+                    lastDot.Y + (position - Grid.SegmentLength) * direction.Y);
                 
                 var segment = NewSegment(pt1, pt2);
                 if (segment is not null)
@@ -181,7 +175,7 @@ public class Game
     public void Undo(int steps = 1)
     {
         Grid.Undo(steps);
-        Image.Load(Grid, SegmentLength, NoTouchingRule);
+        Image.Load(Grid);
     }
 
     public int SvgWidth(GridFootprint footprint)
@@ -257,17 +251,6 @@ public class Game
             outputFile.Write(jsonString);
         }
     }
-    
-    public static Game FromJson(string json)
-    {
-        var gameJson = JsonSerializer.Deserialize<GameDto>(json);
-        if (gameJson is null)
-        {
-            throw new Exception("Could not parse JSON file.");
-        }
-        var game = gameJson.ToGame();
-        return game;
-    }
 
     public static Game Load(string file)
     {
@@ -281,8 +264,6 @@ public class Game
             jsonString = reader.ReadToEnd();
         }
         
-        return FromJson(jsonString);
+        return new Game(GameDto.FromJson(jsonString).ToGrid());
     }
-    
-    
 }
