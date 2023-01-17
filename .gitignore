@@ -2,8 +2,9 @@
 dotnet/.idea
 dotnet/MorpionSolitaire/bin
 dotnet/MorpionSolitaire/obj
-dotnet/MorpionSolitaireUI
 dotnet/MorpionSolitaireWeb/bin
 dotnet/MorpionSolitaireWeb/obj
 dotnet/MorpionSolitaireGraph/bin
 dotnet/MorpionSolitaireGraph/obj
+dotnet/MorpionSolitaireCLI/bin
+dotnet/MorpionSolitaireCLI/obj
