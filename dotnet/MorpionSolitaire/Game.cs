@@ -77,8 +77,7 @@ public class Game
     public Segment? NewSegment(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
     {
         var segment = Image.NewSegment(pt1, pt2, SegmentLength, NoTouchingRule);
-        if (newPt is not null && segment is not null 
-                              && !segment.Dot.Pt.Equals(newPt))
+        if (newPt.HasValue && segment is not null && !segment.Dot.Pt.Equals(newPt))
         {
             return null;
         }
