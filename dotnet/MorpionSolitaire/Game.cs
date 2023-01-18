@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class Game
 {
@@ -30,7 +28,8 @@ public class Game
         }
 
         var counter = 0;
-        foreach (var action in Grid.Actions.Reverse())
+        var actions = Grid.Actions.Reverse();
+        foreach (var action in actions)
         {
             var dots = action.Elements.OfType<GridDot>().ToList();
             var lines = action.Elements.OfType<GridLine>().ToList();
@@ -178,6 +177,10 @@ public class Game
         Image.Load(Grid);
     }
 
+    public void Restart()
+    {
+        Undo(GetScore());
+    }
     public int SvgWidth(GridFootprint footprint)
     {
         return PixelsPerUnit * (footprint.Xmax - footprint.Xmin + 1);
@@ -230,40 +233,5 @@ public class Game
                SvgBackground(footprint) +
                Grid.ToSvg() +
                "</svg>";
-    }
-    
-    public string ToJson()
-    {
-        var json = new GameDto(this);
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        return JsonSerializer.Serialize(json, options);
-    }
-
-    public void Save(string file, bool overwrite = false)
-    {
-        if (!overwrite && File.Exists(file))
-        {
-            throw new Exception($"File '{file}' exists already.");
-        }
-        var jsonString = ToJson();
-        using (var outputFile = new StreamWriter(file))
-        {
-            outputFile.Write(jsonString);
-        }
-    }
-
-    public static Game Load(string file)
-    {
-        if (!File.Exists(file))
-        {
-            throw new Exception($"File '{file}' cannot be found.");
-        }
-        var jsonString = "";
-        using (var reader = new StreamReader(file))
-        {
-            jsonString = reader.ReadToEnd();
-        }
-        
-        return new Game(GameDto.FromJson(jsonString).ToGrid());
     }
 }

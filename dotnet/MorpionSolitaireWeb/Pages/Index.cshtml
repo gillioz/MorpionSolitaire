@@ -7,8 +7,8 @@
 
 <div class="text-center">
 	<p style="color:red;">@Model.ErrorMessage</p>
-	<div id="grid-container">@Html.Raw(Model.GameGraph.ToSvg())</div>
-	<p>Score: <b id="score-container">@Model.GameGraph.GetScore()</b></p>
+	<div id="grid-container">@Html.Raw(Model.Game.ToSvg())</div>
+	<p>Score: <b id="score-container">@Model.Game.GetScore()</b></p>
 	<p>
 		<button onclick="ajaxRequest('Undo')">Undo last move</button>
 		<button onclick="ajaxRequest('UndoFive')">Undo last five moves</button>

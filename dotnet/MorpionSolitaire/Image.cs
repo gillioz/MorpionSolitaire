@@ -32,8 +32,9 @@ public class Image
         var XYmax = new ImageCoordinates(new GridCoordinates(footprint.Xmax, footprint.Ymax));
         Set(XYmin, false);
         Set(XYmax, false);
-        
-        foreach (var action in grid.Actions)
+
+        var actions = grid.Actions.Reverse();
+        foreach (var action in actions)
         {
             var gridLines = action.Elements.OfType<GridLine>().ToList();
             if (gridLines.Count == 1)

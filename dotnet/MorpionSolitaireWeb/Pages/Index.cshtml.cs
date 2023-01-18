@@ -11,24 +11,24 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
     
-    public GameGraph GameGraph { get; set; }
+    public Game Game { get; set; }
     public string ErrorMessage { get; set; }
 
     
-    public static Dictionary<string, GameGraph> GameGraphes = new Dictionary<string, GameGraph>();
+    public static Dictionary<string, Game> Games = new Dictionary<string, Game>();
     public static Collection<string> ActiveSessions = new Collection<string>();
 
     public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
-        GameGraph = new GameGraph(Grid.Cross());
+        Game = new GameGraph(Grid.Cross());
         ErrorMessage = "";
     }
 
     private string RestoreSession()
     {
         var sessionId = HttpContext.Session.GetString("ID") ?? Guid.Empty.ToString();
-        GameGraph = GameGraphes[sessionId];
+        Game = Games[sessionId];
         ActiveSessions.Add(sessionId);
         return sessionId;
     }
@@ -36,11 +36,11 @@ public class IndexModel : PageModel
     // this must be called every day or so... how?
     private void SessionCleanUp()
     {
-        foreach (KeyValuePair<string, GameGraph> keyValuePair in GameGraphes)
+        foreach (KeyValuePair<string, Game> keyValuePair in Games)
         {
             if (!ActiveSessions.Contains(keyValuePair.Key))
             {
-                GameGraphes.Remove(keyValuePair.Key);
+                Games.Remove(keyValuePair.Key);
             }
         }
         ActiveSessions.Clear();
@@ -48,7 +48,7 @@ public class IndexModel : PageModel
     
     public GridFootprint Footprint()
     {
-        return GameGraph.GetFootPrint();
+        return Game.GetFootPrint();
     }
     
     public void OnGet()
@@ -58,12 +58,12 @@ public class IndexModel : PageModel
         {
             sessionId = Guid.NewGuid().ToString();
             HttpContext.Session.SetString("ID", sessionId);
-            GameGraph = new GameGraph(Grid.Cross());
-            GameGraphes[sessionId] = GameGraph;
+            Game = new Game(Grid.Cross());
+            Games[sessionId] = Game;
         }
         else
         {
-            GameGraph = GameGraphes[sessionId];
+            Game = Games[sessionId];
         }
         ActiveSessions.Add(sessionId);
         ErrorMessage = "";
@@ -72,8 +72,8 @@ public class IndexModel : PageModel
     public ActionResult OnPostDownload()
     {
         RestoreSession();
-        var jsonString = GameGraph.ToJson();
-        var bytes = Encoding.UTF8.GetBytes(jsonString);
+        var json = Game.Grid.ToJson();
+        var bytes = Encoding.UTF8.GetBytes(json);
         var file = "MorpionSolitaire-" +
             DateTime.Now.ToString("yyyy-MM-dd-HHmm") +
             ".json";
@@ -103,8 +103,8 @@ public class IndexModel : PageModel
                 jsonString = reader.ReadToEnd();
             }
 
-            GameGraph = new GameGraph(GameDto.FromJson(jsonString).ToGrid());
-            GameGraphes[sessionId] = GameGraph;
+            Game = new Game(GridDto.FromJson(jsonString).ToGrid());
+            Games[sessionId] = Game;
             return;
         }
         catch (Exception e)
@@ -117,42 +117,42 @@ public class IndexModel : PageModel
     public IActionResult OnGetTrySegment(string x1, string y1, string x2, string y2)
     {
         RestoreSession();
-        var success = GameGraph.TryPlay(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
+        var success = Game.TryApplySegment(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
-            return new AddToGridAjaxResponse(GameGraph).ToJsonResult();
+            return new AddToGridAjaxResponse(Game).ToJsonResult();
         }
 
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetRestart()
     {
         var sessionId = RestoreSession();
-        GameGraph.Restart();
-        GameGraphes[sessionId] = GameGraph;
-        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
+        Game.Restart();
+        Games[sessionId] = Game;
+        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetReload()
     {
         RestoreSession();
-        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
+        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetUndo()
     {
         RestoreSession();
-        GameGraph.Undo();
-        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
+        Game.Undo();
+        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetUndoFive()
     {
         RestoreSession();
-        GameGraph.Undo(5);
-        return new ReplaceGridAjaxResponse(GameGraph).ToJsonResult();
+        Game.Undo(5);
+        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
     }
     
     private class AjaxResponse

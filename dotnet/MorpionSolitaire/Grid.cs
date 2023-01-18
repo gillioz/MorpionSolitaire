@@ -1,4 +1,6 @@
-﻿namespace MorpionSolitaire;
+﻿using System.Text.Json;
+
+namespace MorpionSolitaire;
 
 public class Grid
 {
@@ -62,13 +64,10 @@ public class Grid
 
     public void Undo(int steps = 1)
     {
-        if (Actions.Count > 0)
+        while (steps > 0 && Actions.Count > 0)
         {
             Actions.Pop();
-            if (steps > 1)
-            {
-                Undo(steps - 1);
-            }
+            steps -= 1;
         }
     }
     
@@ -85,7 +84,8 @@ public class Grid
     public string ToSvg()
     {
         var result = "";
-        foreach (var action in Actions)
+        var actions = Actions.Reverse();
+        foreach (var action in actions)
         {
             result += action.ToSvg(grouped: true);
         }
@@ -96,5 +96,40 @@ public class Grid
     public int GetScore()
     {
         return Actions.Count - 1;
+    }
+    
+    public string ToJson()
+    {
+        var dto = new GridDto(this);
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        return JsonSerializer.Serialize(dto, options);
+    }
+
+    public void Save(string file, bool overwrite = false)
+    {
+        if (!overwrite && File.Exists(file))
+        {
+            throw new Exception($"File '{file}' exists already.");
+        }
+        var json = ToJson();
+        using (var outputFile = new StreamWriter(file))
+        {
+            outputFile.Write(json);
+        }
+    }
+
+    public static Grid Load(string file)
+    {
+        if (!File.Exists(file))
+        {
+            throw new Exception($"File '{file}' cannot be found.");
+        }
+        var json = "";
+        using (var reader = new StreamReader(file))
+        {
+            json = reader.ReadToEnd();
+        }
+
+        return GridDto.FromJson(json).ToGrid();
     }
 }

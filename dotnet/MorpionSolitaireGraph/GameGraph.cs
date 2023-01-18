@@ -19,7 +19,8 @@ public class GameGraph : Game
         }
 
         var counter = 0;
-        foreach (var action in Grid.Actions.Reverse())
+        var actions = Grid.Actions.Reverse();
+        foreach (var action in actions)
         {
             var dots = action.Elements.OfType<GridDot>().ToList();
             var lines = action.Elements.OfType<GridLine>().ToList();
