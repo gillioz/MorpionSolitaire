@@ -64,7 +64,7 @@ public class Grid
 
     public void Undo(int steps = 1)
     {
-        while (steps > 0 && Actions.Count > 0)
+        while (steps > 0 && Actions.Count > 1)
         {
             Actions.Pop();
             steps -= 1;
