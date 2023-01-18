@@ -2,7 +2,7 @@
 
 public class Histogram
 {
-    private string _filename;
+    private readonly string _filename;
 
     public List<int> Bin { get; }
 

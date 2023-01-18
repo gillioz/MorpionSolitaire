@@ -9,7 +9,6 @@ namespace MorpionSolitaireWeb.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly ILogger<IndexModel> _logger;
     
     public Game Game { get; set; }
     public string ErrorMessage { get; set; }
@@ -18,9 +17,8 @@ public class IndexModel : PageModel
     public static Dictionary<string, Game> Games = new Dictionary<string, Game>();
     public static Collection<string> ActiveSessions = new Collection<string>();
 
-    public IndexModel(ILogger<IndexModel> logger)
+    public IndexModel()
     {
-        _logger = logger;
         Game = new GameGraph(Grid.Cross());
         ErrorMessage = "";
     }

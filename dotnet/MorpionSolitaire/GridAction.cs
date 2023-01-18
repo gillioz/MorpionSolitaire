@@ -2,7 +2,7 @@
 
 public class GridAction
 {
-    public List<GridElement> Elements { get; }
+    public List<GridElement> Elements { get; init; }
 
     public GridAction()
     {
@@ -23,7 +23,7 @@ public class GridAction
     }
 
     public string ToSvg(string color = "black", bool grouped = false)
-    {;
+    {
         var result = "";
         foreach (var element in Elements)
         {

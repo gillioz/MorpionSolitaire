@@ -25,7 +25,7 @@ public class GridDto
         Version = "v1";
         SegmentLength = grid.SegmentLength;
         NoTouchingRule = grid.NoTouchingRule;
-        Grid = grid.Actions.Select(action => new GridActionDto(action)).Reverse().ToList();
+        Grid = grid.Actions.Reverse().Select(action => new GridActionDto(action)).ToList();
     }
 
     public static GridDto FromJson(string json)
@@ -52,9 +52,9 @@ public class GridDto
 
         var grid = new Grid(SegmentLength, NoTouchingRule);
 
-        foreach (var actionJson in Grid)
+        foreach (var gridActionDto in Grid)
         {
-            grid.Apply(actionJson.ToGridAction());
+            grid.Apply(gridActionDto.ToGridAction());
         }
 
         return grid;

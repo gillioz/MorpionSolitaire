@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class Image
 {
@@ -45,7 +43,7 @@ public class Image
                 {
                     throw new Exception("Invalid segment");
                 }
-                Apply(segment.ToImageAction(), true);
+                Apply(segment.ToImageAction());
             }
             else if (gridLines.Count == 0)
             {

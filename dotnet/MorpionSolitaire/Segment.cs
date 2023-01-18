@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualBasic.CompilerServices;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class Segment
 {

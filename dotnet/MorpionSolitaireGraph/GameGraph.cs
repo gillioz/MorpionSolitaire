@@ -24,23 +24,24 @@ public class GameGraph : Game
         {
             var dots = action.Elements.OfType<GridDot>().ToList();
             var lines = action.Elements.OfType<GridLine>().ToList();
-            
-            if ((counter == 0 && lines.Count > 0) 
-                || (counter > 0 && (lines.Count != 1 || dots.Count != 1)))
-            {
-                throw new Exception($"Invalid grid element at stage {counter}.");
-            }
-            foreach (var dot in dots)
-            {
-                Image.Set(new ImageCoordinates(dot.Pt), true);
-            }
 
             if (counter == 0)
             {
+                if (lines.Count > 0) 
+                    throw new Exception("Line elements are not supported at the initial stage");
+
+                foreach (var dot in dots)
+                {
+                    Image.Set(new ImageCoordinates(dot.Pt), true);
+                }
+
                 Nodes.Push(new GameNode(this));
             }
             else
             {
+                if (lines.Count != 1 || dots.Count != 1)
+                    throw new Exception($"Invalid grid element at stage {counter}.");
+
                 var line = lines.Single();
                 var newPoint = dots.Single().Pt;
                 var segment = NewSegment(line.Pt1, line.Pt2, newPoint);
@@ -124,7 +125,7 @@ public class GameGraph : Game
         }
     }
 
-    public void Restart()
+    public new void Restart()
     {
         Undo(GetScore());
     }

@@ -8,19 +8,17 @@ namespace MorpionSolitaireWeb.Pages;
 
 public class ExploreModel : PageModel
 {
-    private readonly ILogger<IndexModel> _logger;
-    
     public GameGraph GameGraph { get; set; }
     public string ErrorMessage { get; set; }
 
     
-    public static Dictionary<string, GameGraph> GameGraphes = new Dictionary<string, GameGraph>();
-    public static Collection<string> ActiveSessions = new Collection<string>();
+    public static Dictionary<string, GameGraph> GameGraphes = new ();
+    public static Collection<string> ActiveSessions = new ();
 
-    public ExploreModel(ILogger<IndexModel> logger)
+    public ExploreModel()
     {
-        _logger = logger;
         GameGraph = new GameGraph(Grid.Cross());
+        ErrorMessage = "";
     }
 
     private string RestoreSession()

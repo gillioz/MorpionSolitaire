@@ -6,7 +6,7 @@ public class Game
     public Image Image { get; init; }
     
     public const int PixelsPerUnit = 20;
-    private  IReadOnlyList<GridCoordinates> Directions = new List<GridCoordinates>
+    private IReadOnlyList<GridCoordinates> _directions = new List<GridCoordinates>
         { new (1, 0), new (0, 1), new (1, 1), new (1, -1)};
 
     protected Game(int segmentLength, bool noTouchingRule)
@@ -18,14 +18,14 @@ public class Game
 
     public Game(Grid grid)
     {
-        Grid = grid;
-        Image = new Image(dimensions: new GridCoordinates(20, 20),
-            origin: new GridCoordinates(5, 5));
-
         if (grid.Actions.Count == 0)
         {
             throw new Exception("Attempt to create a game with an invalid grid");
         }
+
+        Grid = grid;
+        Image = new Image(dimensions: new GridCoordinates(20, 20),
+            origin: new GridCoordinates(5, 5));
 
         var counter = 0;
         var actions = Grid.Actions.Reverse();
@@ -33,19 +33,22 @@ public class Game
         {
             var dots = action.Elements.OfType<GridDot>().ToList();
             var lines = action.Elements.OfType<GridLine>().ToList();
-            
-            if ((counter == 0 && lines.Count > 0) 
-                || (counter > 0 && (lines.Count != 1 || dots.Count != 1)))
-            {
-                throw new Exception($"Invalid grid element at stage {counter}.");
-            }
-            foreach (var dot in dots)
-            {
-                Image.Set(new ImageCoordinates(dot.Pt), true);
-            }
 
-            if (counter > 0)
+            if (counter == 0)
             {
+                if (lines.Count > 0) 
+                    throw new Exception("Line elements are not supported at the initial stage");
+
+                foreach (var dot in dots)
+                {
+                    Image.Set(new ImageCoordinates(dot.Pt), true);
+                }
+            }
+            else
+            {
+                if (lines.Count != 1 || dots.Count != 1)
+                    throw new Exception($"Invalid grid element at stage {counter}.");
+
                 var line = lines.Single();
                 var newPoint = dots.Single().Pt;
                 var segment = NewSegment(line.Pt1, line.Pt2, newPoint);
@@ -148,7 +151,7 @@ public class Game
     {
         var segments = new List<Segment>();
         
-        foreach (var direction in Directions)
+        foreach (var direction in _directions)
         {
             for (int position = 0; position <= Grid.SegmentLength; position++)
             {

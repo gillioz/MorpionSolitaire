@@ -1,6 +1,4 @@
-﻿using System.Net.Sockets;
-
-namespace MorpionSolitaire;
+﻿namespace MorpionSolitaire;
 
 public class ImageCoordinates
 {

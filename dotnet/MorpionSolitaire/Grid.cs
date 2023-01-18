@@ -16,11 +16,10 @@ public class Grid
 
         if (dots is not null)
         {
-            var initialAction = new GridAction();
-            foreach (GridCoordinates dot in dots)
+            var initialAction = new GridAction
             {
-                initialAction.Add(new GridDot(dot));
-            }
+                Elements = dots.Select(dot => new GridDot(dot) as GridElement).ToList()
+            };
 
             Actions.Push(initialAction);
         }
@@ -28,7 +27,7 @@ public class Grid
     
     public static Grid Cross(bool noTouchingRule = false)
     {
-        return new Grid(4, noTouchingRule, new List<GridCoordinates>()
+        return new Grid(4, noTouchingRule, new List<GridCoordinates>
         {
             new(3, 0), new(4, 0), new(5, 0), new(6, 0),
             new(3, 1), new(6, 1), new(3, 2), new(6, 2),
@@ -44,7 +43,7 @@ public class Grid
     
     public static Grid Pipe(bool noTouchingRule = false)
     {
-        return new Grid(4, noTouchingRule, new List<GridCoordinates>()
+        return new Grid(4, noTouchingRule, new List<GridCoordinates>
         {
             new(3, 0), new(4, 0), new(5, 0), new(6, 0),
             new(2, 1), new(7, 1), new(1, 2), new(8, 2),
@@ -124,7 +123,7 @@ public class Grid
         {
             throw new Exception($"File '{file}' cannot be found.");
         }
-        var json = "";
+        string json;
         using (var reader = new StreamReader(file))
         {
             json = reader.ReadToEnd();
