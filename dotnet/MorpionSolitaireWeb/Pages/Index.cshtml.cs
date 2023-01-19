@@ -9,13 +9,11 @@ namespace MorpionSolitaireWeb.Pages;
 
 public class IndexModel : PageModel
 {
-    
-    public Game Game { get; set; }
+    public GameGraph Game { get; set; }
     public string ErrorMessage { get; set; }
 
-    
-    public static Dictionary<string, Game> Games = new Dictionary<string, Game>();
-    public static Collection<string> ActiveSessions = new Collection<string>();
+    public static Dictionary<string, GameGraph> Games = new ();
+    public static Collection<string> ActiveSessions = new ();
 
     public IndexModel()
     {
@@ -34,7 +32,7 @@ public class IndexModel : PageModel
     // this must be called every day or so... how?
     private void SessionCleanUp()
     {
-        foreach (KeyValuePair<string, Game> keyValuePair in Games)
+        foreach (KeyValuePair<string, GameGraph> keyValuePair in Games)
         {
             if (!ActiveSessions.Contains(keyValuePair.Key))
             {
@@ -56,7 +54,7 @@ public class IndexModel : PageModel
         {
             sessionId = Guid.NewGuid().ToString();
             HttpContext.Session.SetString("ID", sessionId);
-            Game = new Game(Grid.Cross());
+            Game = new GameGraph(Grid.Cross());
             Games[sessionId] = Game;
         }
         else
@@ -101,7 +99,7 @@ public class IndexModel : PageModel
                 jsonString = reader.ReadToEnd();
             }
 
-            Game = new Game(GridDto.FromJson(jsonString).ToGrid());
+            Game = new GameGraph(GridDto.FromJson(jsonString).ToGrid());
             Games[sessionId] = Game;
             return;
         }
@@ -115,7 +113,7 @@ public class IndexModel : PageModel
     public IActionResult OnGetTrySegment(string x1, string y1, string x2, string y2)
     {
         RestoreSession();
-        var success = Game.TryApplySegment(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
+        var success = Game.TryPlay(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
@@ -158,7 +156,7 @@ public class IndexModel : PageModel
         public string Type { get; set; }
         public int Score { get; set; }
 
-        public AjaxResponse(Game game)
+        public AjaxResponse(GameGraph game)
         {
             Type = "None";
             Score = game.GetScore();
@@ -174,7 +172,7 @@ public class IndexModel : PageModel
     {
         public string Message { get; }
 
-        public AlertAjaxResponse(Game game, string message) : base(game)
+        public AlertAjaxResponse(GameGraph game, string message) : base(game)
         {
             Type = "Alert";
             Message = message;
@@ -185,7 +183,7 @@ public class IndexModel : PageModel
     {
         public string NewElement { get; }
 
-        public AddToGridAjaxResponse(Game game) : base(game)
+        public AddToGridAjaxResponse(GameGraph game) : base(game)
         {
             Type = "Add";
             NewElement = game.Grid.Actions.Peek().ToSvg();
@@ -198,7 +196,7 @@ public class IndexModel : PageModel
         public int MinX { get; }
         public int MinY { get; }
 
-        public ReplaceGridAjaxResponse(Game game) : base(game)
+        public ReplaceGridAjaxResponse(GameGraph game) : base(game)
         {
             Type = "Replace";
             GridContent = game.ToSvg();

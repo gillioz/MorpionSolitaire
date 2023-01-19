@@ -110,7 +110,7 @@ public class GameGraph : Game
         PlayAtRandom();
     }
 
-    public new void Undo(int steps = 1)
+    public override void Undo(int steps = 1)
     {
         while (steps != 0)
         {
@@ -125,7 +125,7 @@ public class GameGraph : Game
         }
     }
 
-    public new void Restart()
+    public override void Restart()
     {
         Undo(GetScore());
     }

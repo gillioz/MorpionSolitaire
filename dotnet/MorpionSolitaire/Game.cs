@@ -174,13 +174,13 @@ public class Game
         return segments;
     }
 
-    public void Undo(int steps = 1)
+    public virtual void Undo(int steps = 1)
     {
         Grid.Undo(steps);
         Image.Load(Grid);
     }
 
-    public void Restart()
+    public virtual void Restart()
     {
         Undo(GetScore());
     }
