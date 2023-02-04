@@ -3,12 +3,14 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
+	var game = Model.GetSessionGame();
+	var footprint = game.GetFootPrint();
 }
 
 <div class="text-center">
 	<p style="color:red;">@Model.ErrorMessage</p>
-	<div id="grid-container">@Html.Raw(Model.Game.ToSvg())</div>
-	<p>Score: <b id="score-container">@Model.Game.GetScore()</b></p>
+	<div id="grid-container">@Html.Raw(game.ToSvg())</div>
+	<p>Score: <b id="score-container">@game.GetScore()</b></p>
 	<p>
 		<button onclick="ajaxRequest('Undo')">Undo last move</button>
 		<button onclick="ajaxRequest('UndoFive')">Undo last five moves</button>
@@ -50,9 +52,6 @@
 		// mouse event listener
 		let clicked = false;
 		const pixelPerUnit = @Game.PixelsPerUnit;
-		@{
-			var footprint = Model.Footprint();
-		}
 		let minX = @footprint.Xmin;
 		let minY = @footprint.Ymin;
 		let x1 = 0;

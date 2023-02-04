@@ -25,6 +25,15 @@ public static class SessionManager
         return newSession.Game;
     }
 
+    public static void Assign(ISession httpContextSession, GameGraph game)
+    {
+        var id = httpContextSession.GetString(SessionKey) ?? string.Empty;
+        if (!_sessions.TryGetValue(id, out var existingSession)) return;
+
+        existingSession.Game = game;
+        existingSession.Update();
+    }
+
     public static void Clean()
     {
         _sessions = _sessions

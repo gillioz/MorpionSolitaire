@@ -7,80 +7,68 @@ namespace MorpionSolitaireWeb.Pages;
 
 public class ExploreModel : PageModel
 {
-    public GameGraph Game;
     public string ErrorMessage;
 
     public ExploreModel()
     {
-        Game = new GameGraph(Grid.Cross());
         ErrorMessage = "";
     }
 
-    private void RestoreSession()
+    public GameGraph GetSessionGame()
     {
-        Game = SessionManager.Restore(HttpContext.Session);
-    }
-    
-    public GridFootprint Footprint()
-    {
-        return Game.GetFootPrint();
-    }
-    
-    public void OnGet()
-    {
-        RestoreSession();
+        return SessionManager.Restore(HttpContext.Session);
     }
 
     public IActionResult OnGetLoad()
     {
-        RestoreSession();
-        return new AjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetPlay(string id)
     {
-        RestoreSession();
+        var game = GetSessionGame();
         var index = int.Parse(id);
-        if (index >= 0 && index < Game.Nodes.Peek().Branches.Count)
+        if (index >= 0 && index < game.Nodes.Peek().Branches.Count)
         {
-            Game.Play(index);
+            game.Play(index);
         }
-        return new AjaxResponse(Game).ToJsonResult();
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetPlayOneAtRandom()
     {
-        RestoreSession();
-        Game.PlayAtRandom(1);
-        return new AjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.PlayAtRandom(1);
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetPlayAtRandom()
     {
-        RestoreSession();
-        Game.PlayAtRandom();
-        return new AjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.PlayAtRandom();
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetUndo()
     {
-        RestoreSession();
-        Game.Undo();
-        return new AjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.Undo();
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetUndoFive()
     {
-        RestoreSession();
-        Game.Undo(5);
-        return new AjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.Undo(5);
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetRestart()
     {
-        RestoreSession();
-        Game.Restart();
-        return new AjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.Restart();
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     private class AjaxResponse

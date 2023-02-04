@@ -8,36 +8,28 @@ namespace MorpionSolitaireWeb.Pages;
 
 public class IndexModel : PageModel
 {
-    public GameGraph Game { get; set; }
     public string ErrorMessage { get; set; }
 
     public IndexModel()
     {
-        Game = new GameGraph(Grid.Cross());
         ErrorMessage = "";
     }
 
-    private void RestoreSession()
+    public GameGraph GetSessionGame()
     {
-        Game = SessionManager.Restore(HttpContext.Session);
+        return SessionManager.Restore(HttpContext.Session);
     }
-    
-    public GridFootprint Footprint()
-    {
-        return Game.GetFootPrint();
-    }
-    
+
     public void OnGet()
     {
         SessionManager.Clean();
-        RestoreSession();
         ErrorMessage = "";
     }
 
     public ActionResult OnPostDownload()
     {
-        RestoreSession();
-        var json = Game.Grid.ToJson();
+        var game = GetSessionGame();
+        var json = game.Grid.ToJson();
         var bytes = Encoding.UTF8.GetBytes(json);
         var file = "MorpionSolitaire-" +
             DateTime.Now.ToString("yyyy-MM-dd-HHmm") +
@@ -66,9 +58,9 @@ public class IndexModel : PageModel
             {
                 jsonString = reader.ReadToEnd();
             }
-
-            RestoreSession();
-            Game = new GameGraph(GridDto.FromJson(jsonString).ToGrid());
+            
+            var game = new GameGraph(GridDto.FromJson(jsonString).ToGrid());
+            SessionManager.Assign(HttpContext.Session, game);
             return;
         }
         catch (Exception e)
@@ -80,42 +72,42 @@ public class IndexModel : PageModel
 
     public IActionResult OnGetTrySegment(string x1, string y1, string x2, string y2)
     {
-        RestoreSession();
-        var success = Game.TryPlay(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
+        var game = GetSessionGame();
+        var success = game.TryPlay(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
-            return new AddToGridAjaxResponse(Game).ToJsonResult();
+            return new AddToGridAjaxResponse(game).ToJsonResult();
         }
 
-        return new AjaxResponse(Game).ToJsonResult();
+        return new AjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetRestart()
     {
-        RestoreSession();
-        Game.Restart();
-        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.Restart();
+        return new ReplaceGridAjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetReload()
     {
-        RestoreSession();
-        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        return new ReplaceGridAjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetUndo()
     {
-        RestoreSession();
-        Game.Undo();
-        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.Undo();
+        return new ReplaceGridAjaxResponse(game).ToJsonResult();
     }
 
     public IActionResult OnGetUndoFive()
     {
-        RestoreSession();
-        Game.Undo(5);
-        return new ReplaceGridAjaxResponse(Game).ToJsonResult();
+        var game = GetSessionGame();
+        game.Undo(5);
+        return new ReplaceGridAjaxResponse(game).ToJsonResult();
     }
     
     private class AjaxResponse
