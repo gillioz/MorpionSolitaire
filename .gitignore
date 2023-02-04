@@ -1,10 +1,11 @@
-.idea/
-dotnet/.idea
-dotnet/MorpionSolitaire/bin
-dotnet/MorpionSolitaire/obj
-dotnet/MorpionSolitaireWeb/bin
-dotnet/MorpionSolitaireWeb/obj
-dotnet/MorpionSolitaireGraph/bin
-dotnet/MorpionSolitaireGraph/obj
-dotnet/MorpionSolitaireCLI/bin
-dotnet/MorpionSolitaireCLI/obj
+# Python
+**/__pycache__/
+
+# .NET solution
+**/.idea/
+**/bin/
+**/obj/
+**/*.DotSettings.user
+
+# Jupyter notebooks
+**/.ipynb_checkpoints
