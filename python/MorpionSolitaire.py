@@ -92,10 +92,10 @@ class Grid(np.ndarray):
         viewwindow = (offset, offset + view - 1)
         viewrange = range(offset, offset + view)
         fig = plt.figure(figsize=(figsize, figsize))
-        ax = fig.gca(aspect=1, autoscale_on = False,
-                     xlim = viewwindow, ylim = viewwindow,
-                     xticks=viewrange, xticklabels = '',
-                     yticks=viewrange, yticklabels = '')
+        fig.add_subplot(aspect=1, autoscale_on=False,
+                        xlim=viewwindow, ylim=viewwindow,
+                        xticks=viewrange, xticklabels='',
+                        yticks=viewrange, yticklabels='')
         plt.grid()
         for x in viewrange:
             for y in viewrange:
