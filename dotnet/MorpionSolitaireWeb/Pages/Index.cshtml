@@ -8,7 +8,6 @@
 }
 
 <div class="text-center">
-	<p style="color:red;">@Model.ErrorMessage</p>
 	<div id="grid-container">@Html.Raw(game.ToSvg())</div>
 	<p>Score: <b id="score-container">@game.GetScore()</b></p>
 	<p>
@@ -120,6 +119,7 @@
 		}
 		// function to handle AJAX requests' responses
 		function responseHandler(data) {
+			scoreContainer.innerText = data.score;
 			switch(data.type) {
 				case "Add":
 					gridContainer.firstChild.appendChild(newSVGElement(data.newElement));
@@ -130,13 +130,11 @@
 					minY = data.minY;
 					addMouseEventListeners();
 					break;
-				case "Alert":
-					alert(data.message);
-					break;
 				default:
-					
 			}
-			scoreContainer.innerText = data.score;
+			if (data.message !== ""){
+				alert(data.message);
+			}
 		}
 		
 	</script>

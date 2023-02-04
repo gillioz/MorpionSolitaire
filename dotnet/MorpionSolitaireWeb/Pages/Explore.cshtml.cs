@@ -1,19 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using MorpionSolitaire;
 using MorpionSolitaireGraph;
 
 namespace MorpionSolitaireWeb.Pages;
 
 public class ExploreModel : PageModel
 {
-    public string ErrorMessage;
-
-    public ExploreModel()
-    {
-        ErrorMessage = "";
-    }
-
     public GameGraph GetSessionGame()
     {
         return SessionManager.Restore(HttpContext.Session);

@@ -8,13 +8,6 @@ namespace MorpionSolitaireWeb.Pages;
 
 public class IndexModel : PageModel
 {
-    public string ErrorMessage { get; set; }
-
-    public IndexModel()
-    {
-        ErrorMessage = "";
-    }
-
     public GameGraph GetSessionGame()
     {
         return SessionManager.Restore(HttpContext.Session);
@@ -23,10 +16,9 @@ public class IndexModel : PageModel
     public void OnGet()
     {
         SessionManager.Clean();
-        ErrorMessage = "";
     }
 
-    public ActionResult OnPostDownload()
+    public IActionResult OnPostDownload()
     {
         var game = GetSessionGame();
         var json = game.Grid.ToJson();
@@ -61,13 +53,11 @@ public class IndexModel : PageModel
             
             var game = new GameGraph(GridDto.FromJson(jsonString).ToGrid());
             SessionManager.Assign(HttpContext.Session, game);
-            return;
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
         }
-        ErrorMessage = $"Failed to load file '{file?.FileName}'";
     }
 
     public IActionResult OnGetTrySegment(string x1, string y1, string x2, string y2)
@@ -77,7 +67,12 @@ public class IndexModel : PageModel
             new GridCoordinates(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
-            return new AddToGridAjaxResponse(game).ToJsonResult();
+            var response = new AddToGridAjaxResponse(game);
+            if (game.Nodes.Peek().Branches.Count == 0)
+            {
+                response.Message = "Game over.";
+            }
+            return response.ToJsonResult();
         }
 
         return new AjaxResponse(game).ToJsonResult();
@@ -114,27 +109,18 @@ public class IndexModel : PageModel
     {
         public string Type { get; set; }
         public int Score { get; set; }
+        public string Message { get; set; }
 
         public AjaxResponse(GameGraph game)
         {
             Type = "None";
             Score = game.GetScore();
+            Message = string.Empty;
         }
 
         public JsonResult ToJsonResult()
         {
             return new JsonResult(this);
-        }
-    }
-
-    private class AlertAjaxResponse : AjaxResponse
-    {
-        public string Message { get; }
-
-        public AlertAjaxResponse(GameGraph game, string message) : base(game)
-        {
-            Type = "Alert";
-            Message = message;
         }
     }
 
