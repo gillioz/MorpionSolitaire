@@ -2,118 +2,85 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MorpionSolitaire;
 using MorpionSolitaireGraph;
-using System.Collections.ObjectModel;
 
 namespace MorpionSolitaireWeb.Pages;
 
 public class ExploreModel : PageModel
 {
-    public GameGraph GameGraph { get; set; }
-    public string ErrorMessage { get; set; }
-
-    
-    public static Dictionary<string, GameGraph> GameGraphes = new ();
-    public static Collection<string> ActiveSessions = new ();
+    public GameGraph Game;
+    public string ErrorMessage;
 
     public ExploreModel()
     {
-        GameGraph = new GameGraph(Grid.Cross());
+        Game = new GameGraph(Grid.Cross());
         ErrorMessage = "";
     }
 
-    private string RestoreSession()
+    private void RestoreSession()
     {
-        var sessionId = HttpContext.Session.GetString("GraphID") ?? Guid.Empty.ToString();
-        GameGraph = GameGraphes[sessionId];
-        ActiveSessions.Add(sessionId);
-        return sessionId;
-    }
-
-    // this must be called every day or so... how?
-    private void SessionCleanUp()
-    {
-        foreach (KeyValuePair<string, GameGraph> keyValuePair in GameGraphes)
-        {
-            if (!ActiveSessions.Contains(keyValuePair.Key))
-            {
-                GameGraphes.Remove(keyValuePair.Key);
-            }
-        }
-        ActiveSessions.Clear();
+        Game = SessionManager.Restore(HttpContext.Session);
     }
     
     public GridFootprint Footprint()
     {
-        return GameGraph.GetFootPrint();
+        return Game.GetFootPrint();
     }
     
     public void OnGet()
     {
-        var sessionId = HttpContext.Session.GetString("GraphID");
-        if (sessionId is null)
-        {
-            sessionId = Guid.NewGuid().ToString();
-            HttpContext.Session.SetString("GraphID", sessionId);
-            GameGraph = new GameGraph(Grid.Cross());
-            GameGraphes[sessionId] = GameGraph;
-        }
-        else
-        {
-            GameGraph = GameGraphes[sessionId];
-        }
-        ActiveSessions.Add(sessionId);
+        RestoreSession();
     }
 
     public IActionResult OnGetLoad()
     {
         RestoreSession();
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetPlay(string id)
     {
         RestoreSession();
         var index = int.Parse(id);
-        if (index >= 0 && index < GameGraph.Nodes.Peek().Branches.Count)
+        if (index >= 0 && index < Game.Nodes.Peek().Branches.Count)
         {
-            GameGraph.Play(index);
+            Game.Play(index);
         }
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetPlayOneAtRandom()
     {
         RestoreSession();
-        GameGraph.PlayAtRandom(1);
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        Game.PlayAtRandom(1);
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetPlayAtRandom()
     {
         RestoreSession();
-        GameGraph.PlayAtRandom();
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        Game.PlayAtRandom();
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetUndo()
     {
         RestoreSession();
-        GameGraph.Undo();
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        Game.Undo();
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetUndoFive()
     {
         RestoreSession();
-        GameGraph.Undo(5);
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        Game.Undo(5);
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     public IActionResult OnGetRestart()
     {
         RestoreSession();
-        GameGraph.Restart();
-        return new AjaxResponse(GameGraph).ToJsonResult();
+        Game.Restart();
+        return new AjaxResponse(Game).ToJsonResult();
     }
 
     private class AjaxResponse

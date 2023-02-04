@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MorpionSolitaire;
-using System.Collections.ObjectModel;
 using System.Text;
 using MorpionSolitaireGraph;
 
@@ -12,34 +11,15 @@ public class IndexModel : PageModel
     public GameGraph Game { get; set; }
     public string ErrorMessage { get; set; }
 
-    public static Dictionary<string, GameGraph> Games = new ();
-    public static Collection<string> ActiveSessions = new ();
-
     public IndexModel()
     {
         Game = new GameGraph(Grid.Cross());
         ErrorMessage = "";
     }
 
-    private string RestoreSession()
+    private void RestoreSession()
     {
-        var sessionId = HttpContext.Session.GetString("ID") ?? Guid.Empty.ToString();
-        Game = Games[sessionId];
-        ActiveSessions.Add(sessionId);
-        return sessionId;
-    }
-
-    // this must be called every day or so... how?
-    private void SessionCleanUp()
-    {
-        foreach (KeyValuePair<string, GameGraph> keyValuePair in Games)
-        {
-            if (!ActiveSessions.Contains(keyValuePair.Key))
-            {
-                Games.Remove(keyValuePair.Key);
-            }
-        }
-        ActiveSessions.Clear();
+        Game = SessionManager.Restore(HttpContext.Session);
     }
     
     public GridFootprint Footprint()
@@ -49,19 +29,8 @@ public class IndexModel : PageModel
     
     public void OnGet()
     {
-        var sessionId = HttpContext.Session.GetString("ID");
-        if (sessionId is null)
-        {
-            sessionId = Guid.NewGuid().ToString();
-            HttpContext.Session.SetString("ID", sessionId);
-            Game = new GameGraph(Grid.Cross());
-            Games[sessionId] = Game;
-        }
-        else
-        {
-            Game = Games[sessionId];
-        }
-        ActiveSessions.Add(sessionId);
+        SessionManager.Clean();
+        RestoreSession();
         ErrorMessage = "";
     }
 
@@ -78,7 +47,6 @@ public class IndexModel : PageModel
 
     public void OnPostUpload(IFormFile file)
     {
-        var sessionId = RestoreSession();
         try
         {
             if (file is null || file.Length == 0)
@@ -99,8 +67,8 @@ public class IndexModel : PageModel
                 jsonString = reader.ReadToEnd();
             }
 
+            RestoreSession();
             Game = new GameGraph(GridDto.FromJson(jsonString).ToGrid());
-            Games[sessionId] = Game;
             return;
         }
         catch (Exception e)
@@ -125,9 +93,8 @@ public class IndexModel : PageModel
 
     public IActionResult OnGetRestart()
     {
-        var sessionId = RestoreSession();
+        RestoreSession();
         Game.Restart();
-        Games[sessionId] = Game;
         return new ReplaceGridAjaxResponse(Game).ToJsonResult();
     }
 
