@@ -3,29 +3,28 @@
 public class ProgressBar
 {
     private long _n;
-    private long _step;
-    private long _completedSteps;
+    private long _state;
 
     public void Initialize(long n)
     {
         _n = n;
-        _step = n < 100 ? 100 : n / 100;
-        _completedSteps = 0;
+        _state = 0;
 
         Console.WriteLine();
         Console.WriteLine(
             "0%      10%       20%       30%       40%       50%       60%       70%       80%       90%     100%");
         Console.WriteLine(
             "---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+");
+        Console.Write("*");
     }
 
-    public void Iterate()
+    public void Update(long i)
     {
-        var newsteps = (_n - _completedSteps) / _step;
-        if (newsteps > 0)
+        var increment = ((100 * i) / _n) - _state;
+        if (increment > 0)
         {
-            Console.Write(new string('*', (int)newsteps));
-            _completedSteps += newsteps * _step;
+            Console.Write(new string('*', (int)increment));
+            _state += increment;
         }
     }
 

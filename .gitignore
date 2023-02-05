@@ -6,6 +6,7 @@
 **/bin/
 **/obj/
 **/*.DotSettings.user
+dotnet/temp*
 
 # Jupyter notebooks
 **/.ipynb_checkpoints

@@ -2,36 +2,33 @@
 
 public class Histogram
 {
-    private readonly string _filename;
+    private List<int> _bin { get; }
 
-    public List<int> Bin { get; }
-
-    public Histogram(string filename)
+    public Histogram()
     {
-        _filename = filename;
-        Bin = new List<int> { 0 };
+        _bin = new List<int> { 0 };
     }
 
     public void Add(int value)
     {
         if (value < 0) return;
 
-        while (value >= Bin.Count)
+        while (value >= _bin.Count)
         {
-            Bin.Add(0);
+            _bin.Add(0);
         }
 
-        Bin[value] += 1;
+        _bin[value] += 1;
     }
 
-    public void Save(bool verbose = true)
+    public void Save(string path, bool verbose = true)
     {
         if (verbose)
         {
-            Console.Write($"Writing file to '{_filename}'...");
+            Console.Write($"Writing file to '{path}'...");
         }
 
-        File.WriteAllLines(_filename, Bin.Select(x => x.ToString()));
+        File.WriteAllLines(path, _bin.Select(x => x.ToString()));
 
         if (verbose)
         {

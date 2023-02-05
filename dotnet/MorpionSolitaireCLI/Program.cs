@@ -20,7 +20,7 @@ public class Program
         _progressBar?.Initialize(_n);
         _timing?.Start();
         var graph = new GameGraph(Grid.Cross());
-        for (long n = 0; n < _n; n++)
+        for (long i = 0; i < _n; i++)
         {
             graph.PlayAtRandom();
             var score = graph.GetScore();
@@ -28,14 +28,14 @@ public class Program
             // graph.Restart();
             
             _maxHistogram?.Add(score);
-            _progressBar?.Iterate();
+            _progressBar?.Update(i);
         }
         _timing?.Stop();
 
         _progressBar?.Terminate();
         _timing?.Print(_n);
 
-        _maxHistogram?.Save();
+        _maxHistogram?.Save(Path.Combine(_dataFolder, "maxHistogram.csv"));
     }
 
     private static void ParseArguments(string[] args)
@@ -48,7 +48,7 @@ public class Program
         }
 
         var index = 0;
-        while (index <= args.Length)
+        while (index < args.Length)
         {
             var flag = args[index];
             if (flag == "-n")
@@ -80,7 +80,7 @@ public class Program
             }
             else if (flag == "--maxHistogram")
             {
-                _maxHistogram = new Histogram(Path.Combine(_dataFolder, "maxHistogram.csv"));
+                _maxHistogram = new Histogram();
             }
             else
             {
