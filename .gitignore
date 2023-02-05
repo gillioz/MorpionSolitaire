@@ -1,0 +1,11 @@
+# Python
+**/__pycache__/
+
+# .NET solution
+**/.idea/
+**/bin/
+**/obj/
+**/*.DotSettings.user
+
+# Jupyter notebooks
+**/.ipynb_checkpoints

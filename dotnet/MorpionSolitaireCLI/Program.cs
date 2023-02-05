@@ -1,0 +1,94 @@
+﻿using MorpionSolitaire;
+using MorpionSolitaireGraph;
+
+namespace MorpionSolitaireCLI;
+
+public class Program
+{
+    private static long _n;
+    private static Timing? _timing;
+    private static ProgressBar? _progressBar;
+    private static string _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
+    private static Histogram? _maxHistogram;
+
+    static void Main(string[] args)
+    {
+        ParseArguments(args);
+ 
+        Console.WriteLine($"Running {_n} games");
+
+        _progressBar?.Initialize(_n);
+        _timing?.Start();
+        var graph = new GameGraph(Grid.Cross());
+        for (long n = 0; n < _n; n++)
+        {
+            graph.PlayAtRandom();
+            var score = graph.GetScore();
+            graph = new GameGraph(Grid.Cross());
+            // graph.Restart();
+            
+            _maxHistogram?.Add(score);
+            _progressBar?.Iterate();
+        }
+        _timing?.Stop();
+
+        _progressBar?.Terminate();
+        _timing?.Print(_n);
+
+        _maxHistogram?.Save();
+    }
+
+    private static void ParseArguments(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("Usage example:");
+            Console.WriteLine("MorpionSolitaireCLI.exe -n 1000 --timing --progress --path data/ --maxHistogram");
+            return;
+        }
+
+        var index = 0;
+        while (index <= args.Length)
+        {
+            var flag = args[index];
+            if (flag == "-n")
+            {
+                index += 1;
+                if (index >= args.Length)
+                {
+                    throw new ArgumentException();
+                }
+                _n = long.Parse(args[index]);
+            }
+            else if (flag == "--timing")
+            {
+                _timing = new Timing();
+            }
+            else if (flag == "--progress")
+            {
+                _progressBar = new ProgressBar();
+            }
+            else if (flag == "--path")
+            {
+                index += 1;
+                if (index >= args.Length)
+                {
+                    throw new ArgumentException();
+                }
+                _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, args[index]);
+                Console.WriteLine($"Writing all data to : '{_dataFolder}'");
+            }
+            else if (flag == "--maxHistogram")
+            {
+                _maxHistogram = new Histogram(Path.Combine(_dataFolder, "maxHistogram.csv"));
+            }
+            else
+            {
+                Console.WriteLine($"Unknown flag '{flag}'");
+                throw new ArgumentException();
+            }
+
+            index += 1;
+        }
+    }
+}

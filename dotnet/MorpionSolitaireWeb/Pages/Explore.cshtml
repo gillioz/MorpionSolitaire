@@ -1,0 +1,105 @@
+﻿@page
+@model ExploreModel
+@{
+    ViewData["Title"] = "Explore";
+}
+
+<div class="text-center">
+	<div id="grid-container"></div>
+	<p>Score: <b id="score-container"></b></p>
+	<p>Number of possible moves: <b id="move-count-container"></b></p>
+	<div class="btn-group" data-toggle="buttons" id="buttons-container"></div>
+	<p><button onclick="playSelected()">Play selected move</button></p>
+	<p>
+		<button onclick="ajaxRequest('PlayOneAtRandom')">Pick one move at random</button>
+		<button onclick="ajaxRequest('PlayAtRandom')">Play all moves at random</button>
+	</p>
+	<p>
+    	<button onclick="ajaxRequest('Undo')">Undo last move</button>
+    	<button onclick="ajaxRequest('UndoFive')">Undo last five moves</button>
+    	<button onclick="ajaxRequest('Restart')">Restart</button>
+    </p>
+	
+	<script>
+		// get elements by id
+		const gridContainer = document.getElementById('grid-container');
+		const scoreContainer = document.getElementById('score-container');
+		const moveCountContainer = document.getElementById('move-count-container');
+		const buttonContainer = document.getElementById('buttons-container');
+		
+		// interactive segment
+		let interactiveSegment = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		interactiveSegment.innerHTML = 
+			'<line x1="0" y1="0" x2="0" y2="0" style="stroke:red;stroke-width:0.15;opacity:0.5" />' +
+			'<circle cx="0" cy="0" r="0.2" fill="red" />';
+		let interactiveLine = interactiveSegment.firstElementChild;
+		let interactiveDot = interactiveSegment.lastElementChild;
+		
+		let checkedButton = -1;
+		function selectSegment(id, x1, y1, x2, y2, x, y) {
+			checkedButton = id;
+			interactiveLine.setAttribute('x1', x1);
+			interactiveLine.setAttribute('y1', y1);
+			interactiveLine.setAttribute('x2', x2);
+			interactiveLine.setAttribute('y2', y2);
+			interactiveDot.setAttribute('cx', x);
+			interactiveDot.setAttribute('cy', y);
+		}
+		
+		let firstButton = true;
+		function addButton(id, data) {
+			let params = data.split(' ');
+			let label = params[0];
+			let x1 = params[1];
+			let y1 = params[2];
+			let x2 = params[3];
+			let y2 = params[4];
+			let x = params[5];
+			let y = params[6];
+			let checked = '';
+			if (firstButton) {
+				checked = 'checked';
+				firstButton = false;
+				selectSegment(id, x1, y1, x2, y2, x, y);
+			}
+			let newButton = document.createElement('label');
+			newButton.setAttribute('class', 'btn btn-primary');
+			newButton.innerHTML = `<input type="radio" name="segments" onclick="selectSegment(${id}, ${x1}, ${y1}, ${x2}, ${y2}, ${x}, ${y});" ${checked}> ${label}`;
+			buttonContainer.appendChild(newButton);
+		}
+		
+		// AJAX request
+		function ajaxRequest(handler) {
+			$.ajax({ 
+				url: '?handler=' + handler,
+				success: function (data) {
+					responseHandler(data)
+				}
+			});
+		}
+		// function to handle AJAX response
+		function responseHandler(data) {
+			gridContainer.innerHTML = data.grid;
+			scoreContainer.innerText = data.score;
+			buttonContainer.innerText = "";
+			let nButtons = data.buttons.length;
+			moveCountContainer.innerText = nButtons;
+			firstButton = true;
+			checkedButton = -1;
+			for (var i = 0; i < data.buttons.length; i++) {
+				addButton(`${i}`, data.buttons[i]);
+			}
+			if (nButtons > 0) {
+				gridContainer.firstChild.appendChild(interactiveSegment);
+			}
+		}
+		
+		function playSelected(){
+			ajaxRequest(`Play&id=${checkedButton}`);
+		}
+		
+		document.addEventListener("DOMContentLoaded", function() {
+          ajaxRequest('Load');
+        });
+	</script>
+</div>
