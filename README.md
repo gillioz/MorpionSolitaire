@@ -43,3 +43,4 @@ In addition to the original set of rules, several variants that are playable on 
 Deep learning
 -------------
 
+The folder `deeplearning` contains several Jupyter notebooks with deep learning experiments.
