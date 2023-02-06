@@ -4,7 +4,10 @@ namespace MorpionSolitaireGraph;
 
 public class GameGraph : Game
 {
+    private readonly Random _random = new ();
+
     public Stack<GameNode> Nodes { get; }
+    public List<GameBranch> DiscardedBranches { get; set; }
 
     public GameGraph(Grid grid) : base(grid.SegmentLength, grid.NoTouchingRule)
     {
@@ -12,6 +15,7 @@ public class GameGraph : Game
         Image = new Image(dimensions: new GridCoordinates(20, 20),
             origin: new GridCoordinates(5, 5));
         Nodes = new Stack<GameNode>();
+        DiscardedBranches = new List<GameBranch>();
 
         if (grid.Actions.Count == 0)
         {
@@ -65,7 +69,7 @@ public class GameGraph : Game
     public void Play(Segment segment)
     {
         ApplySegment(segment);
-        Nodes.Push(new GameNode(this, Nodes.Peek(), segment));
+        Nodes.Push(new GameNode(this, Nodes.Peek(), segment, DiscardedBranches));
     }
 
     public void Play(int index)
@@ -92,37 +96,78 @@ public class GameGraph : Game
 
     public void PlayAtRandom(int n)
     {
-        if (n <= 0 || Nodes.Peek().Branches.Count <= 0) return;
+        if (n <= 0 || GetNumberOfMoves() == 0) return;
         
         var rand = new Random();
-        var index = rand.Next(0, Nodes.Peek().Branches.Count);
+        var index = rand.Next(0, GetNumberOfMoves());
         Play(index);
         PlayAtRandom(n - 1);
     }
 
     public void PlayAtRandom()
     {
-        if (Nodes.Peek().Branches.Count <= 0) return;
+        if (GetNumberOfMoves() == 0) return;
         
-        var rand = new Random();
-        var index = rand.Next(0, Nodes.Peek().Branches.Count);
+        var index = _random.Next(0, GetNumberOfMoves());
         Play(index);
         PlayAtRandom();
+    }
+
+    private void UndoNode()
+    {
+        Grid.Actions.Pop();
+        var node = Nodes.Pop();
+        if (node.Root is null) throw new Exception("Missing Root in GameNode");
+        Image.Apply(node.Root.ToImageAction(), false);
+    }
+
+    private void CleanDiscardedBranches()
+    {
+        var level = Nodes.Peek().Level;
+        DiscardedBranches = DiscardedBranches.Where(branch => branch.Node.Level < level).ToList();
     }
 
     public override void Undo(int steps = 1)
     {
         while (steps != 0)
         {
-            if (Nodes.Count == 1 || Grid.Actions.Count == 1) return;
+            if (Nodes.Count == 1 || Grid.Actions.Count == 1) break;
 
-            Grid.Actions.Pop();
-            var node = Nodes.Pop();
-            if (node.Root is null) throw new Exception("Missing Root in GameNode");
-            Image.Apply(node.Root.ToImageAction(), false);
+            UndoNode();
 
             steps -= 1;
         }
+
+        CleanDiscardedBranches();
+    }
+
+    public void RevertToNode(GameNode node)
+    {
+        while (Nodes.Peek() != node)
+        {
+            UndoNode();
+        }
+
+        CleanDiscardedBranches();
+    }
+
+    public void RevertAndPlayBranch(GameBranch branch)
+    {
+        RevertToNode(branch.Node);
+        Play(branch.Segment);
+    }
+
+    public void RevertAndPlayDiscardedBranchAtRandom()
+    {
+        if (DiscardedBranches.Count == 0)
+        {
+            Restart();
+            PlayAtRandom(1);
+            return;
+        }
+
+        var index = _random.Next(0, DiscardedBranches.Count);
+        RevertAndPlayBranch(DiscardedBranches[index]);
     }
 
     public override void Restart()

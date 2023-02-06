@@ -68,7 +68,7 @@ public class IndexModel : PageModel
         if (success)
         {
             var response = new AddToGridAjaxResponse(game);
-            if (game.Nodes.Peek().Branches.Count == 0)
+            if (game.GetNumberOfMoves() == 0)
             {
                 response.Message = "Game over.";
             }

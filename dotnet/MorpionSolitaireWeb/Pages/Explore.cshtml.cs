@@ -21,7 +21,7 @@ public class ExploreModel : PageModel
     {
         var game = GetSessionGame();
         var index = int.Parse(id);
-        if (index >= 0 && index < game.Nodes.Peek().Branches.Count)
+        if (index >= 0 && index < game.GetNumberOfMoves())
         {
             game.Play(index);
         }

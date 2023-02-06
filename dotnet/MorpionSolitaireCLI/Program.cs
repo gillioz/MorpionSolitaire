@@ -10,6 +10,7 @@ public class Program
     private static ProgressBar? _progressBar;
     private static string _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
     private static Histogram? _maxHistogram;
+    private static RevertMode _revertMode = RevertMode.Restart;
 
     static void Main(string[] args)
     {
@@ -24,8 +25,16 @@ public class Program
         {
             graph.PlayAtRandom();
             var score = graph.GetScore();
-            graph = new GameGraph(Grid.Cross());
-            // graph.Restart();
+
+            switch(_revertMode) 
+            {
+                case RevertMode.DiscardedBranch:
+                    graph.RevertAndPlayDiscardedBranchAtRandom();
+                    break;
+                default:
+                    graph.Restart();
+                    break;
+            }
             
             _maxHistogram?.Add(score);
             _progressBar?.Update(i);
@@ -82,6 +91,10 @@ public class Program
             {
                 _maxHistogram = new Histogram();
             }
+            else if (flag == "--playDiscardedBranches")
+            {
+                _revertMode = RevertMode.DiscardedBranch;
+            }
             else
             {
                 Console.WriteLine($"Unknown flag '{flag}'");
@@ -90,5 +103,11 @@ public class Program
 
             index += 1;
         }
+    }
+
+    private enum RevertMode
+    {
+        Restart,
+        DiscardedBranch
     }
 }
