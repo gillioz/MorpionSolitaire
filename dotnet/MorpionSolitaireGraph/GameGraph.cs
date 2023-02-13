@@ -151,6 +151,47 @@ public class GameGraph : Game
         CleanDiscardedBranches();
     }
 
+    private int WeightedRandomIndex(IList<double> weights)
+    {
+        var total = weights.Sum();
+        var value = _random.NextDouble() * total;
+        for (var i = 0; i < weights.Count; i++)
+        {
+            value -= weights[i];
+            if (value < 0)
+            {
+                return i;
+            }
+        }
+
+        return weights.Count - 1;
+    }
+
+    public void RevertToRandomNode(Func<int, double>? func = null)
+    {
+        if (Nodes.Count <= 1)
+        {
+            return;
+        }
+
+        int index;
+        if (func == null)
+        {
+            index = _random.Next(1, Nodes.Count);
+        }
+        else
+        {
+            var weights = Nodes
+                .Select(x => func(x.Level))
+                .ToList();
+            weights.RemoveAt(0);
+            index = WeightedRandomIndex(weights) + 1;
+        }
+
+        var randomNode = Nodes.ElementAt(index);
+        RevertToNode(randomNode);
+    }
+
     public void RevertAndPlayBranch(GameBranch branch)
     {
         RevertToNode(branch.Node);

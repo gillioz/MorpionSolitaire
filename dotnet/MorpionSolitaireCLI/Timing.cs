@@ -25,7 +25,16 @@ public class Timing
     {
         var elapsedSeconds = Convert.ToDouble(_watch.ElapsedMilliseconds) / 1000.0;
         var gamesPerSecond = Convert.ToInt32(Convert.ToDouble(n) / elapsedSeconds);
-        var elapsedTime = elapsedSeconds > 60 ? $"{elapsedSeconds / 60} min {elapsedSeconds % 60} s" : $"{elapsedSeconds} s";
+        var timeSpan = TimeSpan.FromSeconds(elapsedSeconds);
+        var elapsedTime = $"{timeSpan.Seconds} s";
+        if (timeSpan.Minutes > 0)
+        {
+            elapsedTime = $"{timeSpan.Minutes} min " + elapsedTime;
+        }
+        if (timeSpan.Hours > 0)
+        {
+            elapsedTime = $"{24 * timeSpan.Days + timeSpan.Hours} h " + elapsedTime;
+        }
 
         Console.WriteLine("Running time: " + elapsedTime);
         Console.WriteLine($"Games per second: {gamesPerSecond}");

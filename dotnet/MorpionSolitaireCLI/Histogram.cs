@@ -28,7 +28,12 @@ public class Histogram
             Console.Write($"Writing file to '{path}'...");
         }
 
-        File.WriteAllLines(path, _bin.Select(x => x.ToString()));
+        var output = new List<string>();
+        for(var i = 0; i < _bin.Count; i++)
+        {
+            output.Add($"{i}, {_bin[i]}");
+        }
+        File.WriteAllLines(path, output);
 
         if (verbose)
         {

@@ -11,13 +11,23 @@ public class Program
     private static string _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
     private static Histogram? _maxHistogram;
     private static RevertMode _revertMode = RevertMode.Restart;
+    private static Func<int, double>? _weightFunction = null;
+    private static double _weightOffset = 1.0;
+    private static int _weightPower = 0;
 
     static void Main(string[] args)
     {
         ParseArguments(args);
- 
-        Console.WriteLine($"Running {_n} games");
 
+        if (_n > 0)
+        {
+            Console.WriteLine($"Running {_n} games");
+            Loop();
+        }
+    }
+
+    private static void Loop()
+    {
         _progressBar?.Initialize(_n);
         _timing?.Start();
         var graph = new GameGraph(Grid.Cross());
@@ -30,6 +40,9 @@ public class Program
             {
                 case RevertMode.DiscardedBranch:
                     graph.RevertAndPlayDiscardedBranchAtRandom();
+                    break;
+                case RevertMode.RandomNode:
+                    graph.RevertToRandomNode(x => (double)x + 10.0);
                     break;
                 default:
                     graph.Restart();
@@ -46,13 +59,27 @@ public class Program
 
         _maxHistogram?.Save(Path.Combine(_dataFolder, "maxHistogram.csv"));
     }
-
     private static void ParseArguments(string[] args)
     {
         if (args.Length == 0)
         {
+            Console.WriteLine("");
             Console.WriteLine("Usage example:");
-            Console.WriteLine("MorpionSolitaireCLI.exe -n 1000 --timing --progress --path data/ --maxHistogram");
+            Console.WriteLine("  MorpionSolitaireCLI.exe -n <number of games to run>");
+            Console.WriteLine("  dotnet run --project MorpionSolitaireCLI -- -n <number of games to run>");
+            Console.WriteLine("");
+            Console.WriteLine("Optional flags");
+            Console.WriteLine("");
+            Console.WriteLine("    --timing      : show the running time");
+            Console.WriteLine("    --progress    : display a progress bar");
+            Console.WriteLine("");
+            Console.WriteLine("    --path <path>    : directory in which data is saved");
+            Console.WriteLine("    --maxHistogram   : save histogram with score occurence");
+            Console.WriteLine("");
+            Console.WriteLine("    --revertMode <mode>     : 'Restart' (default), 'RandomNode', 'DiscardedBranch'");
+            Console.WriteLine("    --weightPower <int>     : use a weighted probability with satisfying");
+            Console.WriteLine("    --weightOffset <double>     [function(score) = score^power + offset]");
+            Console.WriteLine("");
             return;
         }
 
@@ -91,9 +118,49 @@ public class Program
             {
                 _maxHistogram = new Histogram();
             }
-            else if (flag == "--playDiscardedBranches")
+            else if (flag == "--revertMode")
             {
-                _revertMode = RevertMode.DiscardedBranch;
+                index += 1;
+                if (index >= args.Length)
+                {
+                    throw new ArgumentException();
+                }
+                if (!Enum.TryParse<RevertMode>(args[index], out _revertMode))
+                {
+                    throw new ArgumentException();
+                }
+            }
+            else if (flag == "--weightPower")
+            {
+                index += 1;
+                if (index >= args.Length)
+                {
+                    throw new ArgumentException();
+                }
+                if (int.TryParse(args[index], out _weightPower))
+                {
+                    _weightFunction = (x => Math.Pow(x, _weightPower) + _weightOffset);
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
+            }
+            else if (flag == "--weightOffset")
+            {
+                index += 1;
+                if (index >= args.Length)
+                {
+                    throw new ArgumentException();
+                }
+                if (double.TryParse(args[index], out _weightOffset))
+                {
+                    _weightFunction = (x => Math.Pow(x, _weightPower) + _weightOffset);
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
             }
             else
             {
@@ -108,6 +175,7 @@ public class Program
     private enum RevertMode
     {
         Restart,
+        RandomNode,
         DiscardedBranch
     }
 }
