@@ -39,10 +39,10 @@ public class Program
             switch(_revertMode) 
             {
                 case RevertMode.DiscardedBranch:
-                    graph.RevertAndPlayDiscardedBranchAtRandom();
+                    graph.RevertAndPlayRandomDiscardedBranch(_weightFunction);
                     break;
                 case RevertMode.RandomNode:
-                    graph.RevertToRandomNode(x => (double)x + 10.0);
+                    graph.RevertToRandomNode(_weightFunction);
                     break;
                 default:
                     graph.Restart();

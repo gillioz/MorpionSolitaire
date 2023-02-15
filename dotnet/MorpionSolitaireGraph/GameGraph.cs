@@ -198,17 +198,30 @@ public class GameGraph : Game
         Play(branch.Segment);
     }
 
-    public void RevertAndPlayDiscardedBranchAtRandom()
+    public void RevertAndPlayRandomDiscardedBranch(Func<int, double>? func = null)
     {
-        if (DiscardedBranches.Count == 0)
+        int index;
+        if (func == null)
         {
-            Restart();
-            PlayAtRandom(1);
-            return;
+            index = _random.Next(0, DiscardedBranches.Count + 1);
+        }
+        else
+        {
+            var weights = DiscardedBranches
+                .Select(x => func(x.Node.Level + 1))
+                .ToList();
+            weights.Add(func(0));
+            index = WeightedRandomIndex(weights);
         }
 
-        var index = _random.Next(0, DiscardedBranches.Count);
-        RevertAndPlayBranch(DiscardedBranches[index]);
+        if (index == DiscardedBranches.Count)
+        {
+            Restart();
+        }
+        else
+        {
+            RevertAndPlayBranch(DiscardedBranches[index]);
+        }
     }
 
     public override void Restart()
