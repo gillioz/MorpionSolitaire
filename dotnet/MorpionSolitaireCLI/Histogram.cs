@@ -2,7 +2,7 @@
 
 public class Histogram
 {
-    private List<int> _bin { get; }
+    private readonly List<int> _bin;
 
     public Histogram()
     {

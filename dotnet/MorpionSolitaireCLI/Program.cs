@@ -10,6 +10,7 @@ public class Program
     private static ProgressBar? _progressBar;
     private static string _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
     private static Histogram? _maxHistogram;
+    private static Sequence? _sequence;
     private static RevertMode _revertMode = RevertMode.Restart;
     private static Func<int, double>? _weightFunction = null;
     private static double _weightOffset = 1.0;
@@ -34,22 +35,28 @@ public class Program
         for (long i = 0; i < _n; i++)
         {
             graph.PlayAtRandom();
-            var score = graph.GetScore();
+            _maxHistogram?.Add(graph.GetScore());
+            _sequence?.RecordScore(graph.GetScore());
 
             switch(_revertMode) 
             {
                 case RevertMode.DiscardedBranch:
                     graph.RevertAndPlayRandomDiscardedBranch(_weightFunction);
+                    _sequence?.RecordStart(Math.Max(0, graph.GetScore() - 1));
+                    break;
+                case RevertMode.NextBranch:
+                    graph.RevertAndPlayNextDiscardedBranch();
+                    _sequence?.RecordStart(Math.Max(0, graph.GetScore() - 1));
                     break;
                 case RevertMode.RandomNode:
                     graph.RevertToRandomNode(_weightFunction);
+                    _sequence?.RecordStart(graph.GetScore());
                     break;
                 default:
                     graph.Restart();
+                    _sequence?.RecordStart(0);
                     break;
             }
-            
-            _maxHistogram?.Add(score);
             _progressBar?.Update(i);
         }
         _timing?.Stop();
@@ -58,6 +65,7 @@ public class Program
         _timing?.Print(_n);
 
         _maxHistogram?.Save(Path.Combine(_dataFolder, "maxHistogram.csv"));
+        _sequence?.Save(Path.Combine(_dataFolder, "sequence.csv"));
     }
     private static void ParseArguments(string[] args)
     {
@@ -75,8 +83,10 @@ public class Program
             Console.WriteLine("");
             Console.WriteLine("    --path <path>    : directory in which data is saved");
             Console.WriteLine("    --maxHistogram   : save histogram with score occurence");
+            Console.WriteLine("    --sequence       : save a sequence of scores");
             Console.WriteLine("");
-            Console.WriteLine("    --revertMode <mode>     : 'Restart' (default), 'RandomNode', 'DiscardedBranch'");
+            Console.WriteLine("    --revertMode <mode>     " +
+                              ": 'Restart' (default), 'RandomNode', 'DiscardedBranch', 'NextBranch'");
             Console.WriteLine("    --weightPower <int>     : use a weighted probability with satisfying");
             Console.WriteLine("    --weightOffset <double>     [function(score) = score^power + offset]");
             Console.WriteLine("");
@@ -117,6 +127,10 @@ public class Program
             else if (flag == "--maxHistogram")
             {
                 _maxHistogram = new Histogram();
+            }
+            else if (flag == "--sequence")
+            {
+                _sequence = new Sequence();
             }
             else if (flag == "--revertMode")
             {
@@ -176,6 +190,7 @@ public class Program
     {
         Restart,
         RandomNode,
-        DiscardedBranch
+        DiscardedBranch,
+        NextBranch
     }
 }
