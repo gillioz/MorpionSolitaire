@@ -11,14 +11,18 @@
 	<div class="btn-group" data-toggle="buttons" id="buttons-container"></div>
 	<p><button onclick="playSelected()">Play selected move</button></p>
 	<p>
-		<button onclick="ajaxRequest('PlayOneAtRandom')">Pick one move at random</button>
-		<button onclick="ajaxRequest('PlayAtRandom')">Play all moves at random</button>
-	</p>
-	<p>
     	<button onclick="ajaxRequest('Undo')">Undo last move</button>
     	<button onclick="ajaxRequest('UndoFive')">Undo last five moves</button>
     	<button onclick="ajaxRequest('Restart')">Restart</button>
     </p>
+	<p>
+		<button onclick="ajaxRequest('PlayOneAtRandom')">Play one random move</button>
+		<button onclick="ajaxRequest('PlayAtRandom')">Play all moves at random</button>
+	</p>
+	<p>
+		<button onclick="ajaxRequest('RevertAndPlayRandomBranch')">Revert and play a random branch</button>
+		<button onclick="ajaxRequest('RevertAndPlayNextBranch')">Revert and play the next branch</button>
+	</p>
 	
 	<script>
 		// get elements by id

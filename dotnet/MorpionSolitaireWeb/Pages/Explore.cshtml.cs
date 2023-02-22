@@ -56,6 +56,22 @@ public class ExploreModel : PageModel
         return new AjaxResponse(game).ToJsonResult();
     }
 
+    public IActionResult OnGetRevertAndPlayRandomBranch()
+    {
+        var game = GetSessionGame();
+        game.RevertAndPlayRandomDiscardedBranch();
+        game.PlayAtRandom();
+        return new AjaxResponse(game).ToJsonResult();
+    }
+
+    public IActionResult OnGetRevertAndPlayNextBranch()
+    {
+        var game = GetSessionGame();
+        game.RevertAndPlayNextDiscardedBranch();
+        game.PlayAtRandom();
+        return new AjaxResponse(game).ToJsonResult();
+    }
+
     public IActionResult OnGetRestart()
     {
         var game = GetSessionGame();
@@ -78,9 +94,9 @@ public class ExploreModel : PageModel
             for (int i = 0; i < branches.Count; i++)
             {
                 Buttons.Add($"{i+1} " +
-                            $"{branches[i].Line.Pt1.X} {branches[i].Line.Pt1.Y} " +
-                            $"{branches[i].Line.Pt2.X} {branches[i].Line.Pt2.Y} " +
-                            $"{branches[i].Dot.Pt.X} {branches[i].Dot.Pt.Y}");
+                            $"{branches[i].Segment.Line.Pt1.X} {branches[i].Segment.Line.Pt1.Y} " +
+                            $"{branches[i].Segment.Line.Pt2.X} {branches[i].Segment.Line.Pt2.Y} " +
+                            $"{branches[i].Segment.Dot.Pt.X} {branches[i].Segment.Dot.Pt.Y}");
             }
         }
         

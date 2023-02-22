@@ -5,31 +5,35 @@ namespace MorpionSolitaireGraph;
 public class GameNode
 {
     public int Level { get; }
-    public Segment? Root { get; }
-    public List<Segment> Branches { get; }
+    public GameBranch? Root { get; }
+    public List<GameBranch> Branches { get; }
 
     public GameNode(Game game)
     {
         Root = null;
         Level = game.GetScore();
-        Branches = game.FindAllSegments();
+        Branches = game.FindAllSegments()
+            .Select(segment => new GameBranch(this, segment))
+            .ToList();
     }
     
-    public GameNode(Game game, GameNode parent, Segment root, ICollection<GameBranch>? discardedBranches = null)
+    public GameNode(Game game, GameBranch root, ICollection<GameBranch>? discardedBranches = null)
     {
         Root = root;
-        Level = parent.Level + 1;
-        Branches = game.FindNewSegments(root.Dot.Pt);
-        foreach (var segment in parent.Branches)
+        Level = root.Node.Level + 1;
+        Branches = game.FindNewSegments(root.Segment.Dot.Pt)
+            .Select(segment => new GameBranch(this, segment))
+            .ToList();;
+        foreach (var branch in root.Node.Branches)
         {
-            if (segment == root) continue;
-            if (game.Image.IsValid(segment))
+            if (branch == root) continue;
+            if (game.Image.IsValid(branch.Segment))
             {
-                Branches.Add(segment);
+                Branches.Add(new GameBranch(this, branch.Segment));
             }
             else
             {
-                discardedBranches?.Add(new GameBranch(parent, segment));
+                discardedBranches?.Add(branch);
             }
         }
     }

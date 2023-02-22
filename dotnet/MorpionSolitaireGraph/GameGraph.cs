@@ -47,14 +47,11 @@ public class GameGraph : Game
                     throw new Exception($"Invalid grid element at stage {counter}.");
 
                 var line = lines.Single();
-                var newPoint = dots.Single().Pt;
-                var segment = NewSegment(line.Pt1, line.Pt2, newPoint);
-                if (segment is null)
+                var dot = dots.Single();
+                if (!TryPlay(line.Pt1, line.Pt2, dot.Pt))
                 {
                     throw new Exception($"Invalid segment at stage {counter}.");
                 }
-                Image.Apply(segment.ToImageAction());
-                Nodes.Push(new GameNode(this, Nodes.Peek(), segment));
             }
 
             counter += 1;
@@ -66,10 +63,10 @@ public class GameGraph : Game
         return Nodes.Peek().Branches.Count;
     }
 
-    public void Play(Segment segment)
+    public void Play(GameBranch branch)
     {
-        ApplySegment(segment);
-        Nodes.Push(new GameNode(this, Nodes.Peek(), segment, DiscardedBranches));
+        ApplySegment(branch.Segment);
+        Nodes.Push(new GameNode(this, branch, DiscardedBranches));
     }
 
     public void Play(int index)
@@ -78,15 +75,19 @@ public class GameGraph : Game
         Play(segment);
     }
 
-    public bool TryPlay(GridCoordinates pt1, GridCoordinates pt2)
+    public bool TryPlay(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
     {
         var line = new GridLine(pt1, pt2);
 
-        foreach (var segment in Nodes.Peek().Branches)
+        foreach (var branch in Nodes.Peek().Branches)
         {
-            if (segment.Line == line)
+            if (branch.Segment.Line == line)
             {
-                Play(segment);
+                if (newPt != null && newPt != branch.Segment.Dot.Pt)
+                {
+                    return false;
+                }
+                Play(branch);
                 return true;
             }
         }
@@ -96,35 +97,40 @@ public class GameGraph : Game
 
     public void PlayAtRandom(int n)
     {
-        if (n <= 0 || GetNumberOfMoves() == 0) return;
+        var numberOfMoves = GetNumberOfMoves();
+        if (n <= 0 || numberOfMoves == 0) return;
         
-        var rand = new Random();
-        var index = rand.Next(0, GetNumberOfMoves());
+        var index = _random.Next(0, numberOfMoves);
         Play(index);
         PlayAtRandom(n - 1);
     }
 
     public void PlayAtRandom()
     {
-        if (GetNumberOfMoves() == 0) return;
-        
-        var index = _random.Next(0, GetNumberOfMoves());
-        Play(index);
-        PlayAtRandom();
+        int numberOfMoves;
+        while (true)
+        {
+            numberOfMoves = GetNumberOfMoves();
+            if (numberOfMoves == 0) return;
+
+            var index = _random.Next(0, numberOfMoves);
+            Play(index);
+        }
     }
 
-    private void UndoNode()
+    private GameBranch UndoNode()
     {
         Grid.Actions.Pop();
         var node = Nodes.Pop();
         if (node.Root is null) throw new Exception("Missing Root in GameNode");
-        Image.Apply(node.Root.ToImageAction(), false);
+        Image.Apply(node.Root.Segment.ToImageAction(), false);
+        return node.Root;
     }
 
     private void CleanDiscardedBranches()
     {
         var level = Nodes.Peek().Level;
-        DiscardedBranches = DiscardedBranches.Where(branch => branch.Node.Level < level).ToList();
+        DiscardedBranches.RemoveAll(branch => branch.Node.Level >= level);
     }
 
     public override void Undo(int steps = 1)
@@ -141,14 +147,20 @@ public class GameGraph : Game
         CleanDiscardedBranches();
     }
 
-    public void RevertToNode(GameNode node)
+    public void RevertToNode(GameNode node, bool removeRevertedBranch = false)
     {
+        GameBranch? revertedBranch = null;
         while (Nodes.Peek() != node)
         {
-            UndoNode();
+            revertedBranch = UndoNode();
         }
 
         CleanDiscardedBranches();
+
+        if (removeRevertedBranch && revertedBranch != null)
+        {
+            node.Branches.Remove(revertedBranch);
+        }
     }
 
     private int WeightedRandomIndex(IList<double> weights)
@@ -192,12 +204,6 @@ public class GameGraph : Game
         RevertToNode(randomNode);
     }
 
-    public void RevertAndPlayBranch(GameBranch branch)
-    {
-        RevertToNode(branch.Node);
-        Play(branch.Segment);
-    }
-
     public void RevertAndPlayRandomDiscardedBranch(Func<int, double>? func = null)
     {
         int index;
@@ -220,10 +226,33 @@ public class GameGraph : Game
         }
         else
         {
-            RevertAndPlayBranch(DiscardedBranches[index]);
+            var newBranch = DiscardedBranches[index];
+            RevertToNode(newBranch.Node);
+            Play(newBranch);
         }
     }
 
+    public void RevertAndPlayNextDiscardedBranch()
+    {
+        if (DiscardedBranches.Count == 0) return;
+
+        // choose one of the top-level branches at random
+        var maxLevel = DiscardedBranches
+            .Select(branch => branch.Node.Level)
+            .Max();
+        var maxLevelBranches = DiscardedBranches
+            .Where(branch => branch.Node.Level == maxLevel)
+            .ToList();
+        var index = _random.Next(0, maxLevelBranches.Count);
+        var newBranch = maxLevelBranches[index];
+
+        // revert to node and remove reverted branch
+        RevertToNode(newBranch.Node, true);
+
+        // play the new branch
+        Play(newBranch);
+    }
+        
     public override void Restart()
     {
         Undo(GetScore());
