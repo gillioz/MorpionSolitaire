@@ -3,22 +3,26 @@ using MorpionSolitaireGraph;
 
 namespace MorpionSolitaireCLI;
 
-public class Program
+public static class Program
 {
     private static long _n;
     private static Timing? _timing;
     private static ProgressBar? _progressBar;
     private static string _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
     private static Histogram? _maxHistogram;
+    private static bool _maxGrids;
+    private static long _sampleGrids;
     private static Sequence? _sequence;
     private static RevertMode _revertMode = RevertMode.Restart;
-    private static Func<int, double>? _weightFunction = null;
+    private static Func<int, double>? _weightFunction;
     private static double _weightOffset = 1.0;
-    private static int _weightPower = 0;
+    private static int _weightPower;
 
     static void Main(string[] args)
     {
         ParseArguments(args);
+
+        Console.WriteLine($"Writing all data to : '{_dataFolder}'");
 
         if (_n > 0)
         {
@@ -31,12 +35,28 @@ public class Program
     {
         _progressBar?.Initialize(_n);
         _timing?.Start();
+        var maxScore = 0;
         var graph = new GameGraph(Grid.Cross());
         for (long i = 0; i < _n; i++)
         {
             graph.PlayAtRandom();
-            _maxHistogram?.Add(graph.GetScore());
-            _sequence?.RecordScore(graph.GetScore());
+            var score = graph.GetScore();
+            _maxHistogram?.Add(score);
+            _sequence?.RecordScore(score);
+            if (score > maxScore)
+            {
+                maxScore = score;
+                if (_maxGrids)
+                {
+                    graph.Grid.Save(Path.Combine(_dataFolder, $"max_{maxScore}.json"));
+                }
+            }
+
+            if (_sampleGrids > 0 && i % _sampleGrids == 0)
+            {
+                var sampleNumber = i / _sampleGrids;
+                graph.Grid.Save(Path.Combine(_dataFolder, $"sample_{sampleNumber:D5}.json"));
+            }
 
             switch(_revertMode) 
             {
@@ -67,29 +87,43 @@ public class Program
         _maxHistogram?.Save(Path.Combine(_dataFolder, "maxHistogram.csv"));
         _sequence?.Save(Path.Combine(_dataFolder, "sequence.csv"));
     }
+
+    private static void Help(string? message = null)
+    {
+        if (message != null)
+        {
+            Console.WriteLine("");
+            Console.WriteLine(message);
+        }
+
+        Console.WriteLine("");
+        Console.WriteLine("Usage example:");
+        Console.WriteLine("  MorpionSolitaireCLI.exe -n <number of games to run>");
+        Console.WriteLine("  dotnet run --project MorpionSolitaireCLI -- -n <number of games to run>");
+        Console.WriteLine("");
+        Console.WriteLine("Optional flags");
+        Console.WriteLine("");
+        Console.WriteLine("    --timing      : show the running time");
+        Console.WriteLine("    --progress    : display a progress bar");
+        Console.WriteLine("");
+        Console.WriteLine("    --path <path>       : directory in which data is saved");
+        Console.WriteLine("    --sampleGrids <int> : save every n-th game");
+        Console.WriteLine("    --maxGrids          : save the game every time is a new highest score is attained");
+        Console.WriteLine("    --maxHistogram      : save histogram with score occurence");
+        Console.WriteLine("    --sequence          : save a sequence of scores");
+        Console.WriteLine("");
+        Console.WriteLine("    --revertMode <mode>     : " +
+                          "'Restart' (default), 'RandomNode', 'DiscardedBranch', 'NextBranch'");
+        Console.WriteLine("    --weightPower <int>     : use a weighted probability with satisfying");
+        Console.WriteLine("    --weightOffset <double>     [function(score) = score^power + offset]");
+        Console.WriteLine("");
+    }
+
     private static void ParseArguments(string[] args)
     {
         if (args.Length == 0)
         {
-            Console.WriteLine("");
-            Console.WriteLine("Usage example:");
-            Console.WriteLine("  MorpionSolitaireCLI.exe -n <number of games to run>");
-            Console.WriteLine("  dotnet run --project MorpionSolitaireCLI -- -n <number of games to run>");
-            Console.WriteLine("");
-            Console.WriteLine("Optional flags");
-            Console.WriteLine("");
-            Console.WriteLine("    --timing      : show the running time");
-            Console.WriteLine("    --progress    : display a progress bar");
-            Console.WriteLine("");
-            Console.WriteLine("    --path <path>    : directory in which data is saved");
-            Console.WriteLine("    --maxHistogram   : save histogram with score occurence");
-            Console.WriteLine("    --sequence       : save a sequence of scores");
-            Console.WriteLine("");
-            Console.WriteLine("    --revertMode <mode>     " +
-                              ": 'Restart' (default), 'RandomNode', 'DiscardedBranch', 'NextBranch'");
-            Console.WriteLine("    --weightPower <int>     : use a weighted probability with satisfying");
-            Console.WriteLine("    --weightOffset <double>     [function(score) = score^power + offset]");
-            Console.WriteLine("");
+            Help();
             return;
         }
 
@@ -102,7 +136,8 @@ public class Program
                 index += 1;
                 if (index >= args.Length)
                 {
-                    throw new ArgumentException();
+                    Help("Missing argument after flag '-n'");
+                    return;
                 }
                 _n = long.Parse(args[index]);
             }
@@ -119,10 +154,28 @@ public class Program
                 index += 1;
                 if (index >= args.Length)
                 {
-                    throw new ArgumentException();
+                    Help("Missing argument after flag '--path'");
+                    return;
                 }
                 _dataFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, args[index]);
-                Console.WriteLine($"Writing all data to : '{_dataFolder}'");
+            }
+            else if (flag == "--maxGrids")
+            {
+                _maxGrids = true;
+            }
+            else if (flag == "--sampleGrids")
+            {
+                index += 1;
+                if (index >= args.Length)
+                {
+                    Help("Missing argument after flag '--sampleGrids'");
+                    return;
+                }
+                if (!long.TryParse(args[index], out _sampleGrids))
+                {
+                    Help("Cannot parse --sampleGrids argument");
+                    return;
+                }
             }
             else if (flag == "--maxHistogram")
             {
@@ -137,11 +190,13 @@ public class Program
                 index += 1;
                 if (index >= args.Length)
                 {
-                    throw new ArgumentException();
+                    Help("Missing argument after flag '--revertMode'");
+                    return;
                 }
-                if (!Enum.TryParse<RevertMode>(args[index], out _revertMode))
+                if (!Enum.TryParse(args[index], out _revertMode))
                 {
-                    throw new ArgumentException();
+                    Help("Cannot parse --revertMode argument");
+                    return;
                 }
             }
             else if (flag == "--weightPower")
@@ -149,7 +204,8 @@ public class Program
                 index += 1;
                 if (index >= args.Length)
                 {
-                    throw new ArgumentException();
+                    Help("Missing argument after flag '--weightPower'");
+                    return;
                 }
                 if (int.TryParse(args[index], out _weightPower))
                 {
@@ -157,7 +213,8 @@ public class Program
                 }
                 else
                 {
-                    throw new ArgumentException();
+                    Help("Cannot parse --weightPower argument");
+                    return;
                 }
             }
             else if (flag == "--weightOffset")
@@ -165,7 +222,8 @@ public class Program
                 index += 1;
                 if (index >= args.Length)
                 {
-                    throw new ArgumentException();
+                    Help("Missing argument after flag '-weightOffset'");
+                    return;
                 }
                 if (double.TryParse(args[index], out _weightOffset))
                 {
@@ -173,13 +231,14 @@ public class Program
                 }
                 else
                 {
-                    throw new ArgumentException();
+                    Help("Cannot parse --weightOffset argument");
+                    return;
                 }
             }
             else
             {
-                Console.WriteLine($"Unknown flag '{flag}'");
-                throw new ArgumentException();
+                Help($"Unknown flag '{flag}'");
+                return;
             }
 
             index += 1;

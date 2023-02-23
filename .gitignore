@@ -1,12 +1,15 @@
+**/.idea/
+
 # Python
 **/__pycache__/
 
 # .NET solution
-**/.idea/
-**/bin/
-**/obj/
-**/*.DotSettings.user
+dotnet/**/.idea/
+dotnet/**/bin/
+dotnet/**/obj/
+dotnet/**/*.DotSettings.user
 dotnet/temp*
+dotnet/data/**/*.json
 
 # Jupyter notebooks
 **/.ipynb_checkpoints
