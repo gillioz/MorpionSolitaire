@@ -6,16 +6,16 @@ public class GameGraph : Game
 {
     private readonly Random _random = new ();
 
-    public Stack<GameNode> Nodes { get; }
-    public List<GameBranch> DiscardedBranches { get; set; }
+    public Stack<Node> Nodes { get; }
+    public List<Branch> DiscardedBranches { get; set; }
 
     public GameGraph(Grid grid) : base(grid.SegmentLength, grid.NoTouchingRule)
     {
         Grid = grid;
         Image = new Image(dimensions: new GridCoordinates(20, 20),
             origin: new GridCoordinates(5, 5));
-        Nodes = new Stack<GameNode>();
-        DiscardedBranches = new List<GameBranch>();
+        Nodes = new Stack<Node>();
+        DiscardedBranches = new List<Branch>();
 
         if (grid.Actions.Count == 0)
         {
@@ -39,7 +39,7 @@ public class GameGraph : Game
                     Image.Set(new ImageCoordinates(dot.Pt), true);
                 }
 
-                Nodes.Push(new GameNode(this));
+                Nodes.Push(new Node(this));
             }
             else
             {
@@ -63,10 +63,10 @@ public class GameGraph : Game
         return Nodes.Peek().Branches.Count;
     }
 
-    public void Play(GameBranch branch)
+    public void Play(Branch branch)
     {
         ApplySegment(branch.Segment);
-        Nodes.Push(new GameNode(this, branch, DiscardedBranches));
+        Nodes.Push(new Node(this, branch, DiscardedBranches));
     }
 
     public void Play(int index)
@@ -118,7 +118,7 @@ public class GameGraph : Game
         }
     }
 
-    private GameBranch UndoNode()
+    private Branch UndoNode()
     {
         Grid.Actions.Pop();
         var node = Nodes.Pop();
@@ -147,9 +147,9 @@ public class GameGraph : Game
         CleanDiscardedBranches();
     }
 
-    public void RevertToNode(GameNode node, bool removeRevertedBranch = false)
+    public void RevertToNode(Node node, bool removeRevertedBranch = false)
     {
-        GameBranch? revertedBranch = null;
+        Branch? revertedBranch = null;
         while (Nodes.Peek() != node)
         {
             revertedBranch = UndoNode();

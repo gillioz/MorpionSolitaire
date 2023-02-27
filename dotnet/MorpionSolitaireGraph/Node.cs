@@ -2,34 +2,34 @@
 
 namespace MorpionSolitaireGraph;
 
-public class GameNode
+public class Node
 {
     public int Level { get; }
-    public GameBranch? Root { get; }
-    public List<GameBranch> Branches { get; }
+    public Branch? Root { get; }
+    public List<Branch> Branches { get; }
 
-    public GameNode(Game game)
+    public Node(Game game)
     {
         Root = null;
         Level = game.GetScore();
         Branches = game.FindAllSegments()
-            .Select(segment => new GameBranch(this, segment))
+            .Select(segment => new Branch(this, segment))
             .ToList();
     }
     
-    public GameNode(Game game, GameBranch root, ICollection<GameBranch>? discardedBranches = null)
+    public Node(Game game, Branch root, ICollection<Branch>? discardedBranches = null)
     {
         Root = root;
         Level = root.Node.Level + 1;
         Branches = game.FindNewSegments(root.Segment.Dot.Pt)
-            .Select(segment => new GameBranch(this, segment))
+            .Select(segment => new Branch(this, segment))
             .ToList();;
         foreach (var branch in root.Node.Branches)
         {
             if (branch == root) continue;
             if (game.Image.IsValid(branch.Segment))
             {
-                Branches.Add(new GameBranch(this, branch.Segment));
+                Branches.Add(new Branch(this, branch.Segment));
             }
             else
             {

@@ -2,12 +2,12 @@
 
 namespace MorpionSolitaireGraph;
 
-public class GameBranch
+public class Branch
 {
-    public GameNode Node;
+    public Node Node;
     public Segment Segment;
 
-    public GameBranch(GameNode node, Segment segment)
+    public Branch(Node node, Segment segment)
     {
         Node = node;
         Segment = segment;
