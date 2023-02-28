@@ -50,9 +50,10 @@ public class IndexModel : PageModel
             {
                 jsonString = reader.ReadToEnd();
             }
-            
-            var game = new GameGraph(GridDto.FromJson(jsonString).ToGrid());
-            SessionManager.Assign(HttpContext.Session, game);
+
+            var grid = GridDto.FromJson(jsonString).ToGrid();
+            var gameGraph = new GameGraph(grid);
+            SessionManager.Assign(HttpContext.Session, gameGraph);
         }
         catch (Exception e)
         {

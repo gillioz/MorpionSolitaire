@@ -4,7 +4,7 @@ public class Game
 {
     public Grid Grid { get; init; }
     public Image Image { get; init; }
-    
+
     public const int PixelsPerUnit = 20;
     private IReadOnlyList<GridCoordinates> _directions = new List<GridCoordinates>
         { new (1, 0), new (0, 1), new (1, 1), new (1, -1)};
@@ -16,50 +16,52 @@ public class Game
             origin: new GridCoordinates(5, 5));
     }
 
+    protected Game(Game game)
+    {
+        Grid = game.Grid;
+        Image = game.Image;
+    }
+
     public Game(Grid grid)
     {
-        if (grid.Actions.Count == 0)
+        Grid = new Grid(grid.SegmentLength, grid.NoTouchingRule);
+        Image = new Image(dimensions: new GridCoordinates(20, 20),
+            origin: new GridCoordinates(5, 5));
+
+        var actions = grid.Actions.Reverse().ToList();
+        if (actions.Count == 0)
         {
             throw new Exception("Attempt to create a game with an invalid grid");
         }
 
-        Grid = grid;
-        Image = new Image(dimensions: new GridCoordinates(20, 20),
-            origin: new GridCoordinates(5, 5));
+        // starting configuration
+        var initialAction = actions.First();
+        Grid.Actions.Push(initialAction);
+        if (initialAction.Elements.OfType<GridLine>().Any())
+        {
+            throw new Exception("Line elements are not supported at the initial stage");
+        }
+        foreach (var dot in initialAction.Elements.OfType<GridDot>())
+        {
+            Image.Set(new ImageCoordinates(dot.Pt), true);
+        }
 
-        var counter = 0;
-        var actions = Grid.Actions.Reverse();
+        // add segments one by one
+        actions.RemoveAt(0);
         foreach (var action in actions)
         {
             var dots = action.Elements.OfType<GridDot>().ToList();
             var lines = action.Elements.OfType<GridLine>().ToList();
 
-            if (counter == 0)
+            if (lines.Count != 1 || dots.Count != 1)
+                throw new Exception("Invalid grid element.");
+
+            var line = lines.Single();
+            var dot = dots.Single();
+            if (!TryApplySegment(line.Pt1, line.Pt2, dot.Pt))
             {
-                if (lines.Count > 0) 
-                    throw new Exception("Line elements are not supported at the initial stage");
-
-                foreach (var dot in dots)
-                {
-                    Image.Set(new ImageCoordinates(dot.Pt), true);
-                }
+                throw new Exception("Invalid segment.");
             }
-            else
-            {
-                if (lines.Count != 1 || dots.Count != 1)
-                    throw new Exception($"Invalid grid element at stage {counter}.");
-
-                var line = lines.Single();
-                var newPoint = dots.Single().Pt;
-                var segment = NewSegment(line.Pt1, line.Pt2, newPoint);
-                if (segment is null)
-                {
-                    throw new Exception($"Invalid segment at stage {counter}.");
-                }
-                Image.Apply(segment.ToImageAction());
-            }
-
-            counter += 1;
         }
     }
 
@@ -80,16 +82,14 @@ public class Game
         Image.Apply(segment.ToImageAction());
     }
 
-    public bool TryApplySegment(GridCoordinates pt1, GridCoordinates pt2)
+    public bool TryApplySegment(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
     {
-        var segment = NewSegment(pt1, pt2);
-        if (segment is not null)
-        {
-            ApplySegment(segment);
-            return true;
-        }
+        var segment = NewSegment(pt1, pt2, newPt);
+        if (segment is null) return false;
 
-        return false;
+        ApplySegment(segment);
+        return true;
+
     }
 
     public int GetScore()
