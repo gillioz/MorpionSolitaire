@@ -6,6 +6,8 @@ namespace MorpionSolitaireWeb.Pages;
 
 public class ExploreModel : PageModel
 {
+    private static readonly InferenceModel InferenceModel = new InferenceModel();
+
     public GameGraph GetSessionGame()
     {
         return SessionManager.Restore(HttpContext.Session);
@@ -91,9 +93,14 @@ public class ExploreModel : PageModel
             Grid = gameGraph.ToSvg();
             Buttons = new List<string>();
             var branches = gameGraph.Nodes.Peek().Branches;
+
+            // TODO: output this value
+            var estimate = InferenceModel.Infer(gameGraph.Image).ToString();
+
             for (int i = 0; i < branches.Count; i++)
             {
-                Buttons.Add($"{i+1} " +
+                // Buttons.Add($"{i+1} " +
+                Buttons.Add($"{estimate} " +
                             $"{branches[i].Segment.Line.Pt1.X} {branches[i].Segment.Line.Pt1.Y} " +
                             $"{branches[i].Segment.Line.Pt2.X} {branches[i].Segment.Line.Pt2.Y} " +
                             $"{branches[i].Segment.Dot.Pt.X} {branches[i].Segment.Dot.Pt.Y}");

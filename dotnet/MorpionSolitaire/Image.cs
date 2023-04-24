@@ -272,7 +272,7 @@ public class Image
             Set(pixel, value);
         }
     }
-    
+
     public GridFootprint GetFootprint()
     {
         var dimensions = _dimensions.ToGridCoordinates();
@@ -307,4 +307,22 @@ public class Image
     //     var bitmap = ToBitmap();
     //     bitmap.Save(file + ".bmp");
     // }
+
+    public float[,] ToTensor(int width, int height)
+    {
+        var tensor = new float[width, height];
+        var xRange = Math.Min(width, _dimensions.X - 2);
+        var yRange = Math.Min(height, _dimensions.Y - 2);
+        for (var x = 0; x < xRange; x++)
+        {
+            for (var y = 0; y < yRange; y++)
+            {
+                tensor[x, y] = _image[x + 1, y + 1] ? 1 : 0;
+            }
+        }
+
+        return tensor;
+    }
+
+    public float[,] ToTensor(int size) => ToTensor(size, size);
 }
