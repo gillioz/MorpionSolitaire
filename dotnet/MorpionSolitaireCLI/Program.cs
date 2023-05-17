@@ -103,18 +103,18 @@ public static class Program
         Console.WriteLine("");
         Console.WriteLine("Optional flags");
         Console.WriteLine("");
-        Console.WriteLine("    --timing      : show the running time");
-        Console.WriteLine("    --progress    : display a progress bar");
+        Console.WriteLine("    --timing      : shows the running time");
+        Console.WriteLine("    --progress    : displays a progress bar");
         Console.WriteLine("");
         Console.WriteLine("    --path <path>       : directory in which data is saved");
-        Console.WriteLine("    --sampleGrids <int> : save every n-th game");
-        Console.WriteLine("    --maxGrids          : save the game every time is a new highest score is attained");
-        Console.WriteLine("    --maxHistogram      : save histogram with score occurence");
-        Console.WriteLine("    --sequence          : save a sequence of scores");
+        Console.WriteLine("    --sampleGrids <int> : saves every n-th game");
+        Console.WriteLine("    --maxGrids          : saves the game every time a new highest score is attained");
+        Console.WriteLine("    --maxHistogram      : saves an histogram with score occurence");
+        Console.WriteLine("    --sequence          : saves a sequence of scores");
         Console.WriteLine("");
         Console.WriteLine("    --revertMode <mode>     : " +
                           "'Restart' (default), 'RandomNode', 'DiscardedBranch', 'NextBranch'");
-        Console.WriteLine("    --weightPower <int>     : use a weighted probability with satisfying");
+        Console.WriteLine("    --weightPower <int>     : use a weighted probability given by the function");
         Console.WriteLine("    --weightOffset <double>     [function(score) = score^power + offset]");
         Console.WriteLine("");
     }
