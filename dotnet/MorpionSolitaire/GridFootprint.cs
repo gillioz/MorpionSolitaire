@@ -2,24 +2,34 @@
 
 public class GridFootprint
 {
-    public int Xmin { get; set; }
-    public int Ymin { get; set; }
-    public int Xmax { get; set; }
-    public int Ymax { get; set; }
+    public int MinX { get; set; }
+    public int MinY { get; set; }
+    public int MaxX { get; set; }
+    public int MaxY { get; set; }
 
     public GridFootprint()
     {
-        Xmin = 0;
-        Ymin = 0;
-        Xmax = 0;
-        Ymax = 0;
+        MinX = 0;
+        MinY = 0;
+        MaxX = 0;
+        MaxY = 0;
     }
 
-    public void Add(GridCoordinates pt)
+    public void Add(GridPoint pt)
     {
-        Xmin = Math.Min(Xmin, pt.X);
-        Xmax = Math.Max(Xmax, pt.X);
-        Ymin = Math.Min(Ymin, pt.Y);
-        Ymax = Math.Max(Ymax, pt.Y);
+        MinX = Math.Min(MinX, pt.X);
+        MaxX = Math.Max(MaxX, pt.X);
+        MinY = Math.Min(MinY, pt.Y);
+        MaxY = Math.Max(MaxY, pt.Y);
+    }
+
+    public GridPoint MinCorner()
+    {
+        return new GridPoint(MinX, MinY);
+    }
+
+    public GridPoint MaxCorner()
+    {
+        return new GridPoint(MaxX, MaxY);
     }
 }

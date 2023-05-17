@@ -51,7 +51,7 @@ public class IndexModel : PageModel
                 jsonString = reader.ReadToEnd();
             }
 
-            var grid = GridDto.FromJson(jsonString).ToGrid();
+            var grid = GameDto.FromJson(jsonString).ToGrid();
             var gameGraph = new GameGraph(grid);
             SessionManager.Assign(HttpContext.Session, gameGraph);
         }
@@ -64,8 +64,8 @@ public class IndexModel : PageModel
     public IActionResult OnGetTrySegment(string x1, string y1, string x2, string y2)
     {
         var game = GetSessionGame();
-        var success = game.TryPlay(new GridCoordinates(int.Parse(x1), int.Parse(y1)),
-            new GridCoordinates(int.Parse(x2), int.Parse(y2)));
+        var success = game.TryPlay(new GridPoint(int.Parse(x1), int.Parse(y1)),
+            new GridPoint(int.Parse(x2), int.Parse(y2)));
         if (success)
         {
             var response = new AddToGridAjaxResponse(game);
@@ -147,8 +147,8 @@ public class IndexModel : PageModel
             Type = "Replace";
             GridContent = game.ToSvg();
             var footprint = game.GetFootPrint();
-            MinX = footprint.Xmin;
-            MinY = footprint.Ymin;
+            MinX = footprint.MinX;
+            MinY = footprint.MinY;
         }
     }
 }

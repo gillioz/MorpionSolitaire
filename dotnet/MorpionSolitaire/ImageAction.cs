@@ -2,10 +2,10 @@
 
 public class ImageAction
 {
-    public List<ImageCoordinates> Pixels { get; }
+    public List<ImagePoint> Pixels { get; }
 
     public ImageAction()
     {
-        Pixels = new List<ImageCoordinates>();
+        Pixels = new List<ImagePoint>();
     }
 }

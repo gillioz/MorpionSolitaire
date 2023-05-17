@@ -6,14 +6,14 @@ public class Game
     public Image Image { get; init; }
 
     public const int PixelsPerUnit = 20;
-    private IReadOnlyList<GridCoordinates> _directions = new List<GridCoordinates>
+    private IReadOnlyList<GridPoint> _directions = new List<GridPoint>
         { new (1, 0), new (0, 1), new (1, 1), new (1, -1)};
 
     protected Game(int segmentLength, bool noTouchingRule)
     {
         Grid = new Grid(segmentLength, noTouchingRule);
-        Image = new Image(dimensions: new GridCoordinates(20, 20),
-            origin: new GridCoordinates(5, 5));
+        Image = new Image(dimensions: new GridPoint(20, 20),
+            origin: new GridPoint(5, 5));
     }
 
     protected Game(Game game)
@@ -25,8 +25,8 @@ public class Game
     public Game(Grid grid)
     {
         Grid = new Grid(grid.SegmentLength, grid.NoTouchingRule);
-        Image = new Image(dimensions: new GridCoordinates(20, 20),
-            origin: new GridCoordinates(5, 5));
+        Image = new Image(dimensions: new GridPoint(20, 20),
+            origin: new GridPoint(5, 5));
 
         var actions = grid.Actions.Reverse().ToList();
         if (actions.Count == 0)
@@ -43,7 +43,7 @@ public class Game
         }
         foreach (var dot in initialAction.Elements.OfType<GridDot>())
         {
-            Image.Set(new ImageCoordinates(dot.Pt), true);
+            Image.Set(dot.Pt.ToImagePoint(), true);
         }
 
         // add segments one by one
@@ -65,7 +65,7 @@ public class Game
         }
     }
 
-    public Segment? NewSegment(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
+    public Segment? NewSegment(GridPoint pt1, GridPoint pt2, GridPoint? newPt = null)
     {
         var segment = Image.NewSegment(pt1, pt2, Grid.SegmentLength, Grid.NoTouchingRule);
         if (newPt.HasValue && segment is not null && !segment.Dot.Pt.Equals(newPt))
@@ -82,7 +82,7 @@ public class Game
         Image.Apply(segment.ToImageAction());
     }
 
-    public bool TryApplySegment(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
+    public bool TryApplySegment(GridPoint pt1, GridPoint pt2, GridPoint? newPt = null)
     {
         var segment = NewSegment(pt1, pt2, newPt);
         if (segment is null) return false;
@@ -102,7 +102,7 @@ public class Game
         return (crop) ? Grid.GetFootprint() : Image.GetFootprint();
     }
     
-    private bool TryAddSegment(GridCoordinates pt1, GridCoordinates pt2, ICollection<Segment> list)
+    private bool TryAddSegment(GridPoint pt1, GridPoint pt2, ICollection<Segment> list)
     {
         var segment = NewSegment(pt1, pt2);
         if (segment is not null)
@@ -119,35 +119,35 @@ public class Game
         var footprint = Grid.GetFootprint();
         var segments = new List<Segment>();
 
-        for (var x = footprint.Xmin; x <= footprint.Xmax; x++)
+        for (var x = footprint.MinX; x <= footprint.MaxX; x++)
         {
-            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - Grid.SegmentLength + 1; y++)
+            for (var y = footprint.MinY - 1; y <= footprint.MaxY - Grid.SegmentLength + 1; y++)
             {
-                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x, y + Grid.SegmentLength), segments);
+                TryAddSegment(new GridPoint(x, y), new GridPoint(x, y + Grid.SegmentLength), segments);
             }
         }
 
-        for (var y = footprint.Ymin; y <= footprint.Ymax; y++)
+        for (var y = footprint.MinY; y <= footprint.MaxY; y++)
         {
-            for (var x = footprint.Xmin - 1; x <= footprint.Xmax - Grid.SegmentLength + 1; x++)
+            for (var x = footprint.MinX - 1; x <= footprint.MaxX - Grid.SegmentLength + 1; x++)
             {
-                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + Grid.SegmentLength, y), segments);
+                TryAddSegment(new GridPoint(x, y), new GridPoint(x + Grid.SegmentLength, y), segments);
             }
         }
 
-        for (var x = footprint.Xmin - 1; x <= footprint.Xmax - Grid.SegmentLength + 1; x++)
+        for (var x = footprint.MinX - 1; x <= footprint.MaxX - Grid.SegmentLength + 1; x++)
         {
-            for (var y = footprint.Ymin - 1; y <= footprint.Ymax - Grid.SegmentLength + 1; y++)
+            for (var y = footprint.MinY - 1; y <= footprint.MaxY - Grid.SegmentLength + 1; y++)
             {
-                TryAddSegment(new GridCoordinates(x, y), new GridCoordinates(x + Grid.SegmentLength, y + Grid.SegmentLength), segments);
-                TryAddSegment(new GridCoordinates(x, y + Grid.SegmentLength), new GridCoordinates(x + Grid.SegmentLength, y), segments);
+                TryAddSegment(new GridPoint(x, y), new GridPoint(x + Grid.SegmentLength, y + Grid.SegmentLength), segments);
+                TryAddSegment(new GridPoint(x, y + Grid.SegmentLength), new GridPoint(x + Grid.SegmentLength, y), segments);
             }
         }
 
         return segments;
     }
     
-    public List<Segment> FindNewSegments(GridCoordinates lastDot)
+    public List<Segment> FindNewSegments(GridPoint lastDot)
     {
         var segments = new List<Segment>();
         
@@ -155,13 +155,8 @@ public class Game
         {
             for (int position = 0; position <= Grid.SegmentLength; position++)
             {
-                // TODO: implement multiplication and addition of GridCoordinates
-                // var pt1 = lastDot + position * direction;
-                // var pt2 = lastDot + (SegmentLength - position) * direction;
-                var pt1 = new GridCoordinates(lastDot.X + position * direction.X,
-                    lastDot.Y + position * direction.Y);
-                var pt2 = new GridCoordinates(lastDot.X + (position - Grid.SegmentLength) * direction.X,
-                    lastDot.Y + (position - Grid.SegmentLength) * direction.Y);
+                var pt1 = lastDot + position * direction;
+                var pt2 = lastDot + (position - Grid.SegmentLength) * direction;
                 
                 var segment = NewSegment(pt1, pt2);
                 if (segment is not null)
@@ -186,28 +181,28 @@ public class Game
     }
     public int SvgWidth(GridFootprint footprint)
     {
-        return PixelsPerUnit * (footprint.Xmax - footprint.Xmin + 1);
+        return PixelsPerUnit * (footprint.MaxX - footprint.MinX + 1);
     }
 
     public int SvgHeight(GridFootprint footprint)
     {
-        return PixelsPerUnit * (footprint.Ymax - footprint.Ymin + 1);
+        return PixelsPerUnit * (footprint.MaxY - footprint.MinY + 1);
     }
     
     public string SvgViewBox(GridFootprint footprint)
     {
-        return $"{footprint.Xmin - 0.5:F1} {footprint.Ymin - 0.5:F1} " +
-               $"{footprint.Xmax - footprint.Xmin + 1} {footprint.Ymax - footprint.Ymin + 1}";
+        return $"{footprint.MinX - 0.5:F1} {footprint.MinY - 0.5:F1} " +
+               $"{footprint.MaxX - footprint.MinX + 1} {footprint.MaxY - footprint.MinY + 1}";
     }
 
     public string SvgBackground(GridFootprint footprint, bool grouped = false)
     {
-        var width = footprint.Xmax - footprint.Xmin + 1;
-        var height = footprint.Ymax - footprint.Ymin + 1;
-        var minX = footprint.Xmin - 0.5;
-        var maxX = footprint.Xmax + 0.5;
-        var minY = footprint.Ymin - 0.5;
-        var maxY = footprint.Ymax + 0.5;
+        var width = footprint.MaxX - footprint.MinX + 1;
+        var height = footprint.MaxY - footprint.MinY + 1;
+        var minX = footprint.MinX - 0.5;
+        var maxX = footprint.MaxX + 0.5;
+        var minY = footprint.MinY - 0.5;
+        var maxY = footprint.MaxY + 0.5;
         
         var result = $"<rect width=\"{width}\" height=\"{height}\" "
                           + $"x=\"{minX}\" y=\"{minY}\" style=\"fill:white\" />";
@@ -215,12 +210,12 @@ public class Game
         const string gridStyle = "stroke:lightgray;stroke-width:0.1";
         for (var i = 0; i < width; i++)
         {
-            var x = footprint.Xmin + i;
+            var x = footprint.MinX + i;
             result += $"<line x1=\"{x}\" y1=\"{minY}\" x2=\"{x}\" y2=\"{maxY}\" style=\"{gridStyle}\" />";
         }
         for (var i = 0; i < height; i++)
         {
-            var y = footprint.Ymin + i;
+            var y = footprint.MinY + i;
             result += $"<line x1=\"{minX}\" y1=\"{y}\" x2=\"{maxX}\" y2=\"{y}\" style=\"{gridStyle}\" />";
         }
 

@@ -19,8 +19,8 @@ public class GameGraph : Game
     public GameGraph(Grid grid) : base(grid.SegmentLength, grid.NoTouchingRule)
     {
         Grid = new Grid(grid.SegmentLength, grid.NoTouchingRule);
-        Image = new Image(dimensions: new GridCoordinates(20, 20),
-            origin: new GridCoordinates(5, 5));
+        Image = new Image(dimensions: new GridPoint(20, 20),
+            origin: new GridPoint(5, 5));
         Nodes = new Stack<Node>();
         DiscardedBranches = new List<Branch>();
 
@@ -40,7 +40,7 @@ public class GameGraph : Game
         }
         foreach (var dot in initialAction.Elements.OfType<GridDot>())
         {
-            Image.Set(new ImageCoordinates(dot.Pt), true);
+            Image.Set(dot.Pt.ToImagePoint(), true);
         }
         Nodes.Push(new Node(this));
 
@@ -80,7 +80,7 @@ public class GameGraph : Game
         Play(segment);
     }
 
-    public bool TryPlay(GridCoordinates pt1, GridCoordinates pt2, GridCoordinates? newPt = null)
+    public bool TryPlay(GridPoint pt1, GridPoint pt2, GridPoint? newPt = null)
     {
         var line = new GridLine(pt1, pt2);
 

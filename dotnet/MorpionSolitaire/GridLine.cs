@@ -2,10 +2,10 @@
 
 public class GridLine : GridElement
 {
-    public GridCoordinates Pt1 { get; init; }
-    public GridCoordinates Pt2 { get; init; }
+    public GridPoint Pt1 { get; init; }
+    public GridPoint Pt2 { get; init; }
 
-    public GridLine(GridCoordinates pt1, GridCoordinates pt2)
+    public GridLine(GridPoint pt1, GridPoint pt2)
     {
         if (pt1 < pt2)
         {
@@ -31,18 +31,33 @@ public class GridLine : GridElement
                $"style=\"stroke:{color};stroke-width:0.1\" />";
     }
 
-    public override GridElementDto ToGridElementJson()
+    private bool Equals(GridLine other)
     {
-        return new GridElementDto(this);
+        return Pt1 == other.Pt1 && Pt2 == other.Pt2;
     }
-    
+
+    public override bool Equals(object? obj)
+    {
+        return obj is GridLine other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Pt1, Pt2);
+    }
+
     public static bool operator ==(GridLine l1, GridLine l2)
     {
-        return l1.Pt1 == l2.Pt1 && l1.Pt2 == l2.Pt2;
+        return l1.Equals(l2);
     }
 
     public static bool operator !=(GridLine l1, GridLine l2)
     {
-        return l1.Pt1 != l2.Pt1 || l1.Pt2 != l2.Pt2;
+        return !l1.Equals(l2);
+    }
+
+    public override List<sbyte> ToCoordinatesList()
+    {
+        return new List<sbyte> { Pt1.X, Pt1.Y, Pt2.X, Pt2.Y };
     }
 }

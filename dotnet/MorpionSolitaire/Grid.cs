@@ -8,7 +8,7 @@ public class Grid
     public bool NoTouchingRule { get; }
     public Stack<GridAction> Actions { get; }
 
-    public Grid(int segmentLength, bool noTouchingRule, List<GridCoordinates>? dots = null)
+    public Grid(int segmentLength, bool noTouchingRule, List<GridPoint>? dots = null)
     {
         SegmentLength = segmentLength;
         NoTouchingRule = noTouchingRule;
@@ -27,7 +27,7 @@ public class Grid
     
     public static Grid Cross(bool noTouchingRule = false)
     {
-        return new Grid(4, noTouchingRule, new List<GridCoordinates>
+        return new Grid(4, noTouchingRule, new List<GridPoint>
         {
             new(3, 0), new(4, 0), new(5, 0), new(6, 0),
             new(3, 1), new(6, 1), new(3, 2), new(6, 2),
@@ -43,7 +43,7 @@ public class Grid
     
     public static Grid Pipe(bool noTouchingRule = false)
     {
-        return new Grid(4, noTouchingRule, new List<GridCoordinates>
+        return new Grid(4, noTouchingRule, new List<GridPoint>
         {
             new(3, 0), new(4, 0), new(5, 0), new(6, 0),
             new(2, 1), new(7, 1), new(1, 2), new(8, 2),
@@ -99,7 +99,7 @@ public class Grid
     
     public string ToJson()
     {
-        var dto = new GridDto(this);
+        var dto = new GameDto(this);
         var options = new JsonSerializerOptions { WriteIndented = true };
         return JsonSerializer.Serialize(dto, options);
     }
@@ -129,6 +129,6 @@ public class Grid
             json = reader.ReadToEnd();
         }
 
-        return GridDto.FromJson(json).ToGrid();
+        return GameDto.FromJson(json).ToGrid();
     }
 }

@@ -2,9 +2,9 @@
 
 public class GridDot : GridElement
 {
-    public GridCoordinates Pt { get; }
+    public GridPoint Pt { get; }
 
-    public GridDot(GridCoordinates pt)
+    public GridDot(GridPoint pt)
     {
         Pt = pt;
     }
@@ -19,8 +19,8 @@ public class GridDot : GridElement
         return $"<circle cx=\"{Pt.X}\" cy=\"{Pt.Y}\" r=\"0.15\" fill=\"{color}\" />";
     }
 
-    public override GridElementDto ToGridElementJson()
+    public override List<sbyte> ToCoordinatesList()
     {
-        return new GridElementDto(this);
+        return new List<sbyte> { Pt.X, Pt.Y };
     }
 }

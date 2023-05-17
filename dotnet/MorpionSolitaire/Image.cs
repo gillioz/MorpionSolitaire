@@ -2,16 +2,15 @@
 
 public class Image
 {
-    private ImageCoordinates _dimensions;
-    private ImageCoordinates _origin;
+    private ImagePoint _dimensions;
+    private ImagePoint _origin;
     private bool[,] _image;
-    private int _sizeIncrement;
+    private readonly int _sizeIncrement;
 
-    public Image(GridCoordinates dimensions, GridCoordinates origin, int sizeIncrement = 3)
+    public Image(GridPoint dimensions, GridPoint origin, int sizeIncrement = 3)
     {
-        _dimensions = new ImageCoordinates(dimensions);
-        _origin = new ImageCoordinates(origin);
-        _origin.Add(1, 1);
+        _dimensions = dimensions.ToImagePoint();
+        _origin = origin.ToImagePoint(1);
         _image = EmptyImage();
         _sizeIncrement = 3 * sizeIncrement;
     }
@@ -24,12 +23,13 @@ public class Image
     public void Load(Grid grid)
     {
         _image = EmptyImage();
-        
+
+        // adjust the grid size if needed
         var footprint = grid.GetFootprint();
-        var XYmin = new ImageCoordinates(new GridCoordinates(footprint.Xmin, footprint.Ymin));
-        var XYmax = new ImageCoordinates(new GridCoordinates(footprint.Xmax, footprint.Ymax));
-        Set(XYmin, false);
-        Set(XYmax, false);
+        var minCorner = footprint.MinCorner().ToImagePoint();
+        var maxCorner = footprint.MaxCorner().ToImagePoint();
+        Set(minCorner, false);
+        Set(maxCorner, false);
 
         var actions = grid.Actions.Reverse();
         foreach (var action in actions)
@@ -50,7 +50,7 @@ public class Image
                 var gridDots = action.Elements.OfType<GridDot>().ToList();
                 foreach (var gridDot in gridDots)
                 {
-                    Set(new ImageCoordinates(gridDot.Pt), true);
+                    Set(gridDot.Pt.ToImagePoint(), true);
                 }
             }
             else
@@ -60,7 +60,7 @@ public class Image
         }
     }
 
-    public bool Get(ImageCoordinates pt)
+    public bool Get(ImagePoint pt)
     {
         var x = _origin.X + pt.X;
         var y = _origin.Y + pt.Y;
@@ -78,7 +78,7 @@ public class Image
         return _image[x, y];
     }
 
-    public void Set(ImageCoordinates pt, bool value)
+    public void Set(ImagePoint pt, bool value)
     {
         var x = _origin.X + pt.X;
         var y = _origin.Y + pt.Y;
@@ -114,8 +114,7 @@ public class Image
         _image[x, y] = value;
     }
 
-    public Segment? NewSegment(GridCoordinates pt1, GridCoordinates pt2,
-        int segmentLength, bool noTouchingRule)
+    public Segment? NewSegment(GridPoint pt1, GridPoint pt2, int segmentLength, bool noTouchingRule)
     {
         if (segmentLength <= 0)
         {
@@ -141,15 +140,15 @@ public class Image
             iMax += 1;
         }
 
-        ImageCoordinates? dot = null;
-        var supportDots = new List<ImageCoordinates>();
-        var line = new List<ImageCoordinates>();
+        ImagePoint? dot = null;
+        var supportDots = new List<ImagePoint>();
+        var line = new List<ImagePoint>();
 
         var emptyDotSet = false;
-        var pt0 = new ImageCoordinates(pt1);
+        var pt0 = pt1.ToImagePoint();
         for (int i = iMin; i < iMax; i++)
         {
-            var pt = new ImageCoordinates(pt0.X + i * dx, pt0.Y + i * dy);
+            var pt = new ImagePoint(pt0.X + i * dx, pt0.Y + i * dy);
             if (pt.IsDot())
             {
                 if (Get(pt))
@@ -183,13 +182,13 @@ public class Image
             return null;
         }
 
-        return new Segment(new GridDot(dot.ToGridCoordinates()), new GridLine(pt1, pt2),
-            dot, supportDots, line);
+        return new Segment(new GridDot(dot.Value.ToGridPoint()), new GridLine(pt1, pt2),
+            dot.Value, supportDots, line);
     }
     
     private void ExtendLeft()
     {
-        _dimensions.X += _sizeIncrement;
+        _dimensions = new ImagePoint(_dimensions.X + _sizeIncrement, _dimensions.Y);
         var imageCopy = _image;
         _image = EmptyImage();
         for (int x = _sizeIncrement; x < _dimensions.X; x++)
@@ -200,12 +199,12 @@ public class Image
             }
         }
 
-        _origin.X += _sizeIncrement;
+        _origin = new ImagePoint(_origin.X + _sizeIncrement, _origin.Y);
     }
 
     private void ExtendRight()
     {
-        _dimensions.X += _sizeIncrement;
+        _dimensions = new ImagePoint(_dimensions.X + _sizeIncrement, _dimensions.Y);
         var imageCopy = _image;
         _image = EmptyImage();
         for (int x = 0; x < _dimensions.X - _sizeIncrement; x++)
@@ -219,7 +218,7 @@ public class Image
 
     private void ExtendBottom()
     {
-        _dimensions.Y += _sizeIncrement;
+        _dimensions = new ImagePoint(_dimensions.X, _dimensions.Y + _sizeIncrement);
         var imageCopy = _image;
         _image = EmptyImage();
         for (int x = 0; x < _dimensions.X; x++)
@@ -230,12 +229,12 @@ public class Image
             }
         }
 
-        _origin.Y += _sizeIncrement;
+        _origin = new ImagePoint(_origin.X, _origin.Y + _sizeIncrement);
     }
 
     private void ExtendTop()
     {
-        _dimensions.Y += _sizeIncrement;
+        _dimensions = new ImagePoint(_dimensions.X, _dimensions.Y + _sizeIncrement);
         var imageCopy = _image;
         _image = EmptyImage();
         for (int x = 0; x < _dimensions.X; x++)
@@ -249,7 +248,7 @@ public class Image
 
     public bool IsValid(ImageAction action)
     {
-        foreach (ImageCoordinates pixel in action.Pixels)
+        foreach (ImagePoint pixel in action.Pixels)
         {
             if (Get(pixel))
             {
@@ -267,7 +266,7 @@ public class Image
 
     public void Apply(ImageAction action, bool value = true)
     {
-        foreach (ImageCoordinates pixel in action.Pixels)
+        foreach (ImagePoint pixel in action.Pixels)
         {
             Set(pixel, value);
         }
@@ -275,13 +274,13 @@ public class Image
 
     public GridFootprint GetFootprint()
     {
-        var dimensions = _dimensions.ToGridCoordinates();
-        var origin = _origin.ToGridCoordinates();
+        var dimensions = _dimensions.ToGridPoint();
+        var origin = _origin.ToGridPoint();
         var footprint = new GridFootprint();
-        footprint.Xmin = -1 * origin.X;
-        footprint.Ymin = -1 * origin.Y;
-        footprint.Xmax = dimensions.X - origin.X - 1;
-        footprint.Ymax = dimensions.Y - origin.Y - 1;
+        footprint.MinX = -1 * origin.X;
+        footprint.MinY = -1 * origin.Y;
+        footprint.MaxX = dimensions.X - origin.X - 1;
+        footprint.MaxY = dimensions.Y - origin.Y - 1;
         return footprint;
     }
 

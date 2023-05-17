@@ -2,14 +2,14 @@
 
 public class Segment
 {
-    public List<ImageCoordinates> LineImage { get; }
-    public ImageCoordinates DotImage { get; }
-    public List<ImageCoordinates> SupportDotsImage { get; }
+    public List<ImagePoint> LineImage { get; }
+    public ImagePoint DotImage { get; }
+    public List<ImagePoint> SupportDotsImage { get; }
     public GridLine Line { get; }
     public GridDot Dot { get; }
 
-    public Segment(GridDot dot, GridLine line, ImageCoordinates dotImage,
-        List<ImageCoordinates> supportDotsImage, List<ImageCoordinates> lineImage)
+    public Segment(GridDot dot, GridLine line, ImagePoint dotImage,
+        List<ImagePoint> supportDotsImage, List<ImagePoint> lineImage)
     {
         Dot = dot;
         Line = line;
@@ -37,14 +37,29 @@ public class Segment
 
         return imageAction;
     }
-    
+
+    private bool Equals(Segment other)
+    {
+        return Line == other.Line;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Segment other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return Line.GetHashCode();
+    }
+
     public static bool operator ==(Segment s1, Segment s2)
     {
-        return s1.Line == s2.Line;
+        return s1.Equals(s2);
     }
 
     public static bool operator !=(Segment s1, Segment s2)
     {
-        return s1.Line != s2.Line;
+        return !s1.Equals(s2);
     }
 }
