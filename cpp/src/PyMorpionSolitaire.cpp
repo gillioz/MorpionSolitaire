@@ -8,7 +8,8 @@ PYBIND11_MODULE(PyMorpionSolitaire, m)
     m.doc() = "Morpion Solitaire module. Author: Marc Gillioz. Date: July 2023";
 
     py::class_<GraphGame>(m, "Game")
-            .def(py::init<>())
+            .def(py::init<char, int, bool>(),
+                    py::arg("type") = 'c', py::arg("length") = 4, py::arg("disjoint") = false)
             .def("playByIndex", py::overload_cast<int>(&GraphGame::play))
             .def("playAtRandom", py::overload_cast<>(&GraphGame::playAtRandom))
             .def("playAtRandom", py::overload_cast<int>(&GraphGame::playAtRandom))
