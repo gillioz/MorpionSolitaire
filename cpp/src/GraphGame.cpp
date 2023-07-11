@@ -24,7 +24,7 @@ void GraphGame::buildGraph()
     // add moves successively
     for (const GridMove& gridMove: grid.moves)
         if (!tryPlay(gridMove.line, gridMove.dot))
-            throw string("Trying to load a grid with an invalid segment");
+            throw std::logic_error("Trying to load a grid with an invalid segment");
 }
 
 int GraphGame::getScore() const
@@ -111,7 +111,7 @@ void GraphGame::playAtRandom()
 void GraphGame::undo()
 {
     if ((int)nodes.size() <= 1)
-        throw string("Cannot undo at score zero");
+        throw std::invalid_argument("Cannot undo at score zero");
 
     // remove last move of the grid
     grid.moves.pop_back();

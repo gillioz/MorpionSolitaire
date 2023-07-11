@@ -24,7 +24,7 @@ void Game::buildImage()
     {
         optional<Move> move = tryBuildMove(gridMove.line);
         if (!move.has_value())
-            throw string("Trying to load a grid with an invalid segment");
+            throw std::logic_error("Trying to load a grid with an invalid segment");
         image.apply(move.value());
     }
 }
