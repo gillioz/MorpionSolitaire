@@ -1,13 +1,14 @@
 #ifndef CPPMORPIONSOLITAIRE_GAME_H
 #define CPPMORPIONSOLITAIRE_GAME_H
 
+#include <optional>
 #include <vector>
 #include "Grid.h"
 #include "Image.h"
 #include "GridLine.h"
 #include "Move.h"
 
-using std::vector;
+using std::optional, std::vector;
 
 class Game {
 protected:
@@ -20,8 +21,8 @@ protected:
 public:
     explicit Game(char type = 'c', int length = 4, bool disjoint = false, bool build = true);
 
-    Move* tryBuildMove(const GridLine& line) const;
-    Move* tryBuildMove(const GridLine& line, const GridPoint& dot) const;
+    optional<Move> tryBuildMove(const GridLine& line) const;
+    optional<Move> tryBuildMove(const GridLine& line, const GridPoint& dot) const;
     bool isValidMove(const Move& move) const;
     void applyMove(const Move& move);
     virtual bool tryPlay(const GridLine& line);

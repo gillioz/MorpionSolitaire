@@ -6,18 +6,17 @@
 #include "Game.h"
 #include "Node.h"
 
-using std::vector, std::string;
+using std::string, std::vector;
 
 class GraphGame : public Game {
 private:
-    const Node* node;
+    vector<Node> nodes;
 
     void buildGraph();
     static int randomInt(int max, int min = 0);
 
 public:
     explicit GraphGame(char type = 'c', int length = 4, bool disjoint = false);
-    ~GraphGame();
 
     int getScore() const override;
     int getNumberOfMoves() const;

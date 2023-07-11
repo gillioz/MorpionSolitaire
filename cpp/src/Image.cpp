@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-using std::all_of;
+using std::all_of, std::optional;
 
 bool Image::get(ImagePoint pt) const
 {
@@ -22,14 +22,14 @@ void Image::clear()
     std::memset(image, false, sizeof(image));
 }
 
-Move* Image::tryBuildMove(const GridLine& line, int length, bool disjoint) const
+optional<Move> Image::tryBuildMove(const GridLine& line, int length, bool disjoint) const
 {
-    if (length <= 0) return nullptr;
+    if (length <= 0) return {};
 
     int w = line.width();
     int h = line.height();
     if ((w != 0 && w != length && w != -length) || (h != 0 && h != length && h != -length) || (w == 0 && h == 0))
-        return nullptr; // the point do not have the correct separation to define a segment
+        return {}; // the point do not have the correct separation to define a segment
 
     int dx = w / length;
     int dy = h / length;
@@ -43,7 +43,7 @@ Move* Image::tryBuildMove(const GridLine& line, int length, bool disjoint) const
 
     vector<ImagePoint> points;
     vector<ImagePoint> supportPoints;
-    GridPoint* dot = nullptr;
+    optional<GridPoint> dot;
 
     ImagePoint pt0 = line.pt1.toImagePoint();
     for (int i = iMin; i < iMax; i++){
@@ -54,29 +54,24 @@ Move* Image::tryBuildMove(const GridLine& line, int length, bool disjoint) const
                 supportPoints.push_back(pt);
             else
             {
-                if (dot != nullptr)
-                    return nullptr; // there cannot be more than one new dot
-                dot = new GridPoint(pt.toGridPoint());
+                if (dot.has_value())
+                    return {}; // there cannot be more than one new dot
+                dot.emplace(pt.toGridPoint());
                 points.push_back(pt);
             }
         }
         else
         {
             if (get(pt))
-            {
-                delete dot;
-                return nullptr; // all line elements must be free
-            }
+                return {}; // all line elements must be free
             points.push_back(pt);
         }
     }
 
-    if (dot == nullptr)
-        return nullptr; // there must be one new dot
+    if (!dot.has_value())
+        return {}; // there must be one new dot
 
-    Move* result = new Move(*dot, line, points, supportPoints);
-    delete dot;
-    return result;
+    return Move(dot.value(), line, points, supportPoints);
 }
 
 bool Image::isValidMove(const ImageMove& move) const

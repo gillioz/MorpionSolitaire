@@ -22,24 +22,23 @@ void Game::buildImage()
     // add moves successively
     for (const GridMove& gridMove: grid.moves)
     {
-        Move* move = tryBuildMove(gridMove.line);
-        if (move == nullptr)
+        optional<Move> move = tryBuildMove(gridMove.line);
+        if (!move.has_value())
             throw string("Trying to load a grid with an invalid segment");
-        image.apply(*move);
-        delete move;
+        image.apply(move.value());
     }
 }
 
-Move* Game::tryBuildMove(const GridLine& line) const
+optional<Move> Game::tryBuildMove(const GridLine& line) const
 {
     return image.tryBuildMove(line, grid.length, grid.disjoint);
 }
 
-Move* Game::tryBuildMove(const GridLine& line, const GridPoint& dot) const
+optional<Move> Game::tryBuildMove(const GridLine& line, const GridPoint& dot) const
 {
-    Move* move = tryBuildMove(line);
-    if (move == nullptr || move->dot != dot)
-        return nullptr;
+    optional<Move> move = tryBuildMove(line);
+    if (!move.has_value() || move->dot != dot)
+        return {};
     return move;
 }
 
@@ -56,34 +55,31 @@ void Game::applyMove(const Move& move)
 
 bool Game::tryPlay(const GridLine& line)
 {
-    Move* move = tryBuildMove(line);
+    optional<Move> move = tryBuildMove(line);
 
-    if (move == nullptr)
+    if (!move.has_value())
         return false;
 
-    applyMove(*move);
-    delete move;
+    applyMove(move.value());
     return true;
 }
 
 bool Game::tryPlay(const GridLine& line, const GridPoint &dot)
 {
-    Move* move = tryBuildMove(line, dot);
+    optional<Move> move = tryBuildMove(line, dot);
 
-    if (move == nullptr)
+    if (!move.has_value())
         return false;
 
-    applyMove(*move);
-    delete move;
+    applyMove(move.value());
     return true;
 }
 
 void Game::tryAddMoveToList(const GridLine& line, vector<Move>& listOfMoves) const
 {
-    Move* move = tryBuildMove(line);
-    if (move != nullptr)
-        listOfMoves.push_back(*move);
-    delete move;
+    optional<Move> move = tryBuildMove(line);
+    if (move.has_value())
+        listOfMoves.push_back(move.value());
 }
 
 vector<Move> Game::findAllMoves() const

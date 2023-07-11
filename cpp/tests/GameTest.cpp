@@ -1,5 +1,6 @@
-#include <iostream>
 #include <cassert>
+#include <optional>
+#include <iostream>
 #include "../include/Game.h"
 
 using namespace std;
@@ -41,14 +42,14 @@ int main(){
     cout << "ok" << endl;
 
     cout << "Finding new segments after a move a bunch of legal segments...";
-    Move* move = game.tryBuildMove({{30,32},{30,36}});
-    assert (move != nullptr);
-    game.applyMove(*move);
-    assert (game.findNewMoves(move->dot).empty());
-    move = game.tryBuildMove({{33,32},{33,36}});
-    assert (move != nullptr);
-    game.applyMove(*move);
-    assert (game.findNewMoves(move->dot).size() == 1);
+    auto move1 = game.tryBuildMove({{30,32},{30,36}});
+    assert (move1.has_value());
+    game.applyMove(move1.value());
+    assert (game.findNewMoves(move1->dot).empty());
+    auto move2 = game.tryBuildMove({{33,32},{33,36}});
+    assert (move2.has_value());
+    game.applyMove(move2.value());
+    assert (game.findNewMoves(move2->dot).size() == 1);
     cout << "ok" << endl;
 
     cout << "Restart the game...";

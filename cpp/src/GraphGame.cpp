@@ -1,24 +1,15 @@
 #include "../include/GraphGame.h"
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <random>
 
 using std::cout, std::endl;
 using std::string;
 
-GraphGame::GraphGame(char type, int length, bool disjoint) : Game(type, length, disjoint, false), node(nullptr)
+GraphGame::GraphGame(char type, int length, bool disjoint) : Game(type, length, disjoint, false), nodes()
 {
     buildGraph();
-}
-
-GraphGame::~GraphGame()
-{
-    while (node != nullptr)
-    {
-        const Node* parent = node->parent;
-        delete node;
-        node = parent;
-    }
 }
 
 void GraphGame::buildGraph()
@@ -28,7 +19,7 @@ void GraphGame::buildGraph()
     // add initial points
     for (const GridPoint& dot: grid.initialDots)
         image.set(dot.toImagePoint(), true);
-    node = new Node(findAllMoves()); // computes all possible moves
+    nodes.emplace_back(findAllMoves()); // computes all possible moves
 
     // add moves successively
     for (const GridMove& gridMove: grid.moves)
@@ -38,32 +29,32 @@ void GraphGame::buildGraph()
 
 int GraphGame::getScore() const
 {
-    return node->score;
+    return (int)nodes.size() - 1;
 }
 
 int GraphGame::getNumberOfMoves() const
 {
-    return (int)node->branches.size();
+    return (int)nodes.back().branches.size();
 }
 
 void GraphGame::play(const Move& move)
 {
     applyMove(move);
     vector<Move> branches = findNewMoves(move.dot);
-    for (const Move& branch: node->branches)
+    for (const Move& branch: nodes.back().branches)
         if (isValidMove(branch))
             branches.push_back(branch);
-    node = new Node(*node, move, branches);
+    nodes.emplace_back(move, branches);
 }
 
 void GraphGame::play(int index)
 {
-    play(node->branches[index]);
+    play(nodes.back().branches[index]);
 }
 
 bool GraphGame::tryPlay(const GridLine &line)
 {
-    for (const Move& move: node->branches)
+    for (const Move& move: nodes.back().branches)
         if (move.line == line)
         {
             play(move);
@@ -75,7 +66,7 @@ bool GraphGame::tryPlay(const GridLine &line)
 
 bool GraphGame::tryPlay(const GridLine &line, const GridPoint &dot)
 {
-    for (const Move& move: node->branches)
+    for (const Move& move: nodes.back().branches)
         if (move.line == line)
         {
             if (dot != move.dot)
@@ -119,19 +110,17 @@ void GraphGame::playAtRandom()
 
 void GraphGame::undo()
 {
-    const Node* parent = node->parent;
-    if (parent == nullptr)
+    if ((int)nodes.size() <= 1)
         throw string("Cannot undo at score zero");
 
     // remove last move of the grid
     grid.moves.pop_back();
 
     // undo last move on the image
-    image.apply(*node->root, false);
+    image.apply(*nodes.back().root, false);
 
     // remove last node
-    delete node;
-    node = parent;
+    nodes.pop_back();
 }
 
 void GraphGame::undo(int steps)
@@ -156,12 +145,12 @@ void GraphGame::print() const
 
 void GraphGame::revertToScore(int score)
 {
-    undo(node->score - score);
+    undo(getScore() - score);
 }
 
 void GraphGame::revertToRandomScore()
 {
-    revertToScore(randomInt(node->score - 1));
+    revertToScore(randomInt(getScore() - 2));
 }
 
 vector<int> GraphGame::repeatPlayAtRandom(int n, char type, int length, bool disjoint)
@@ -188,24 +177,25 @@ void GraphGame::playNestedMC(int level)
         playAtRandom();
     else
     {
-        if (node->branches.empty())
+        if (nodes.back().branches.empty())
             return;
-        int currentScore = node->score;
-        const vector<Move>& currentBranches = node->branches;
+        int currentScore = getScore();
+        const vector<Move>& branches = nodes.back().branches;
+        int branchCount = branches.size();
         int bestScore = currentScore;
-        const Move* bestMove = nullptr;
-        for (const Move& move: currentBranches)
+        int bestMove;
+        for (int i = 0; i < branchCount; i++)
         {
-            play(move);
+            play(i);
             playNestedMC(level - 1);
             int score = getScore();
             if (score > bestScore){
                 bestScore = score;
-                bestMove = &move;
+                bestMove = i;
             }
             revertToScore(currentScore);
         }
-        play(*bestMove);
+        play(bestMove);
         playNestedMC(level);
     }
 }
