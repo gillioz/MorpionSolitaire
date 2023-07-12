@@ -30,7 +30,7 @@ public:
     void undo() override;
     void undo(int steps) override;
     void restart() override;
-    void print() const override;
+    virtual void print() const override;
     void revertToScore(int score);
     void revertToRandomScore();
 
