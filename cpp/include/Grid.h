@@ -2,17 +2,17 @@
 #define CPPMORPIONSOLITAIRE_GRID_H
 
 #include <vector>
-#include "GridPoint.h"
+#include "Point.h"
 #include "GridMove.h"
-#include "GridFootprint.h"
 
-using std::vector;
+using std::pair, std::vector;
+
 
 struct Grid
 {
     const int length;
     const bool disjoint;
-    const vector<GridPoint> initialDots;
+    const vector<Point> initialDots;
     vector<GridMove> moves;
 
     explicit Grid(char type = 'e', int length = 4, bool disjoint = false);
@@ -22,10 +22,13 @@ struct Grid
     void remove(int steps);
     int getScore() const;
 
-    static vector<GridPoint> getInitialDots(char type, int length);
-    static vector<GridPoint> cross3();
-    static vector<GridPoint> cross4();
-    static vector<GridPoint> pipe();
+    static vector<Point> getInitialDots(char type, int length);
+    static vector<Point> cross3();
+    static vector<Point> cross4();
+    static vector<Point> pipe();
+
+private:
+    static Point makePointFromCoordinates(int x, int y);
 };
 
 

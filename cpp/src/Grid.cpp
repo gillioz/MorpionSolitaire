@@ -1,11 +1,12 @@
 #include "../include/Grid.h"
+#include "../include/Coordinates.h"
 
 Grid::Grid(char type, int length, bool disjoint)
     : length(length), disjoint(disjoint), initialDots(getInitialDots(type, length)) {}
 
 void Grid::add(const GridMove& move)
 {
-    moves.push_back(move);
+    moves.emplace_back(move);
 }
 
 void Grid::remove()
@@ -27,51 +28,60 @@ int Grid::getScore() const
     return (int)moves.size();
 }
 
-vector<GridPoint> Grid::cross4()
+Point Grid::makePointFromCoordinates(int x, int y)
+{
+    return Coordinates(x, y).toPoint();
+}
+
+vector<Point> Grid::cross4()
 {
     return {
-            GridPoint(30, 27), GridPoint(31, 27), GridPoint(32, 27), GridPoint(33, 27),
-            GridPoint(30, 28), GridPoint(33, 28), GridPoint(30, 29), GridPoint(33, 29),
-            GridPoint(27, 30), GridPoint(28, 30), GridPoint(29, 30), GridPoint(30, 30),
-            GridPoint(33, 30), GridPoint(34, 30), GridPoint(35, 30), GridPoint(36, 30),
-            GridPoint(27, 31), GridPoint(36, 31), GridPoint(27, 32), GridPoint(36, 32),
-            GridPoint(27, 33), GridPoint(28, 33), GridPoint(29, 33), GridPoint(30, 33),
-            GridPoint(33, 33), GridPoint(34, 33), GridPoint(35, 33), GridPoint(36, 33),
-            GridPoint(30, 34), GridPoint(33, 34), GridPoint(30, 35), GridPoint(33, 35),
-            GridPoint(30, 36), GridPoint(31, 36), GridPoint(32, 36), GridPoint(33, 36)
+            makePointFromCoordinates(30, 27), makePointFromCoordinates(31, 27), makePointFromCoordinates(32, 27), makePointFromCoordinates(33, 27),
+            makePointFromCoordinates(30, 28), makePointFromCoordinates(33, 28), makePointFromCoordinates(30, 29), makePointFromCoordinates(33, 29),
+            makePointFromCoordinates(27, 30), makePointFromCoordinates(28, 30), makePointFromCoordinates(29, 30), makePointFromCoordinates(30, 30),
+            makePointFromCoordinates(33, 30), makePointFromCoordinates(34, 30), makePointFromCoordinates(35, 30), makePointFromCoordinates(36, 30),
+            makePointFromCoordinates(27, 31), makePointFromCoordinates(36, 31), makePointFromCoordinates(27, 32), makePointFromCoordinates(36, 32),
+            makePointFromCoordinates(27, 33), makePointFromCoordinates(28, 33), makePointFromCoordinates(29, 33), makePointFromCoordinates(30, 33),
+            makePointFromCoordinates(33, 33), makePointFromCoordinates(34, 33), makePointFromCoordinates(35, 33), makePointFromCoordinates(36, 33),
+            makePointFromCoordinates(30, 34), makePointFromCoordinates(33, 34), makePointFromCoordinates(30, 35), makePointFromCoordinates(33, 35),
+            makePointFromCoordinates(30, 36), makePointFromCoordinates(31, 36), makePointFromCoordinates(32, 36), makePointFromCoordinates(33, 36)
     };
 }
 
-vector<GridPoint> Grid::cross3()
+vector<Point> Grid::cross3()
 {
     return {
-            GridPoint(30, 28), GridPoint(31, 28), GridPoint(32, 28),
-            GridPoint(30, 29), GridPoint(32, 29),
-            GridPoint(28, 30), GridPoint(29, 30), GridPoint(30, 30),
-            GridPoint(32, 30), GridPoint(33, 30), GridPoint(34, 30),
-            GridPoint(28, 31), GridPoint(34, 31),
-            GridPoint(28, 32), GridPoint(29, 32), GridPoint(30, 32),
-            GridPoint(32, 32), GridPoint(33, 32), GridPoint(34, 32),
-            GridPoint(30, 33), GridPoint(32, 33),
-            GridPoint(30, 34), GridPoint(31, 34), GridPoint(32, 34)
+            makePointFromCoordinates(30, 28), makePointFromCoordinates(31, 28), makePointFromCoordinates(32, 28),
+            makePointFromCoordinates(30, 29), makePointFromCoordinates(32, 29),
+            makePointFromCoordinates(28, 30), makePointFromCoordinates(29, 30), makePointFromCoordinates(30, 30),
+            makePointFromCoordinates(32, 30), makePointFromCoordinates(33, 30), makePointFromCoordinates(34, 30),
+            makePointFromCoordinates(28, 31), makePointFromCoordinates(34, 31),
+            makePointFromCoordinates(28, 32), makePointFromCoordinates(29, 32), makePointFromCoordinates(30, 32),
+            makePointFromCoordinates(32, 32), makePointFromCoordinates(33, 32), makePointFromCoordinates(34, 32),
+            makePointFromCoordinates(30, 33), makePointFromCoordinates(32, 33),
+            makePointFromCoordinates(30, 34), makePointFromCoordinates(31, 34), makePointFromCoordinates(32, 34)
     };
 }
 
-vector<GridPoint> Grid::pipe()
+vector<Point> Grid::pipe()
 {
     return {
-            GridPoint(30, 27), GridPoint(31, 27), GridPoint(32, 27), GridPoint(33, 27),
-            GridPoint(29, 28), GridPoint(34, 28), GridPoint(28, 29), GridPoint(35, 29),
-            GridPoint(27, 30), GridPoint(30, 30), GridPoint(31, 30), GridPoint(32, 30), GridPoint(33, 30), GridPoint(36, 30),
-            GridPoint(27, 31), GridPoint(30, 31), GridPoint(33, 31), GridPoint(36, 31),
-            GridPoint(27, 32), GridPoint(30, 32), GridPoint(33, 32), GridPoint(36, 32),
-            GridPoint(27, 33), GridPoint(30, 33), GridPoint(31, 33), GridPoint(32, 33), GridPoint(33, 33), GridPoint(36, 33),
-            GridPoint(28, 34), GridPoint(35, 34), GridPoint(29, 35), GridPoint(34, 35),
-            GridPoint(30, 36), GridPoint(31, 36), GridPoint(32, 36), GridPoint(33, 36)
+            makePointFromCoordinates(30, 27), makePointFromCoordinates(31, 27), makePointFromCoordinates(32, 27), makePointFromCoordinates(33, 27),
+            makePointFromCoordinates(29, 28), makePointFromCoordinates(34, 28), makePointFromCoordinates(28, 29), makePointFromCoordinates(35, 29),
+            makePointFromCoordinates(27, 30), makePointFromCoordinates(30, 30), makePointFromCoordinates(31, 30), makePointFromCoordinates(32, 30),
+            makePointFromCoordinates(33, 30),
+            makePointFromCoordinates(36, 30),
+            makePointFromCoordinates(27, 31), makePointFromCoordinates(30, 31), makePointFromCoordinates(33, 31), makePointFromCoordinates(36, 31),
+            makePointFromCoordinates(27, 32), makePointFromCoordinates(30, 32), makePointFromCoordinates(33, 32), makePointFromCoordinates(36, 32),
+            makePointFromCoordinates(27, 33), makePointFromCoordinates(30, 33), makePointFromCoordinates(31, 33), makePointFromCoordinates(32, 33),
+            makePointFromCoordinates(33, 33),
+            makePointFromCoordinates(36, 33),
+            makePointFromCoordinates(28, 34), makePointFromCoordinates(35, 34), makePointFromCoordinates(29, 35), makePointFromCoordinates(34, 35),
+            makePointFromCoordinates(30, 36), makePointFromCoordinates(31, 36), makePointFromCoordinates(32, 36), makePointFromCoordinates(33, 36)
     };
 }
 
-vector<GridPoint> Grid::getInitialDots(char type, int length)
+vector<Point> Grid::getInitialDots(char type, int length)
 {
     if (type == 'c' && length == 4)
         return cross4();

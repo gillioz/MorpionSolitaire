@@ -2,7 +2,7 @@
 #define CPPMORPIONSOLITAIRE_MOVE_H
 
 #include <vector>
-#include "ImagePoint.h"
+#include "Point.h"
 #include "GridMove.h"
 #include "ImageMove.h"
 
@@ -10,9 +10,9 @@ using std::vector;
 
 struct Move : GridMove, ImageMove
 {
-    const vector<ImagePoint> supportPoints;
+    const vector<Point> supportPoints;
 
-    Move(GridPoint dot, GridLine line, const vector<ImagePoint> &points, const vector<ImagePoint> &supportPoints)
+    Move(Point dot, Line line, const ImageMove& points, const vector<Point>& supportPoints)
             : GridMove(dot, line), ImageMove(points), supportPoints(supportPoints) {};
 };
 

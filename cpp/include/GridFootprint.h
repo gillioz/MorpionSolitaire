@@ -1,18 +1,19 @@
 #ifndef CPPMORPIONSOLITAIRE_GRIDFOOTPRINT_H
 #define CPPMORPIONSOLITAIRE_GRIDFOOTPRINT_H
 
-#include "GridPoint.h"
-
-class Grid;
+#include "Grid.h"
+#include "Point.h"
+#include "Coordinates.h"
 
 struct GridFootprint {
-    int xMin, xMax, yMin, yMax;
+    Coordinates min, max;
+//    int xMin, xMax, yMin, yMax;
 
     explicit GridFootprint(const Grid& grid);
 
-    void add(const Point& pt);
-    GridPoint minCorner() const;
-    GridPoint maxCorner() const;
+    void add(Coordinates coord);
+    void add(Point pt);
+    void pad(int width);
 };
 
 

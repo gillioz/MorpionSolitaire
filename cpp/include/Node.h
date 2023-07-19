@@ -2,19 +2,18 @@
 #define CPPMORPIONSOLITAIRE_NODE_H
 
 #include <memory>
-#include <utility>
+#include <optional>
 #include <vector>
 #include "Move.h"
 
-using std::shared_ptr, std::vector;
+using std::optional, std::vector;
 
 struct Node {
-    const shared_ptr<const Move> root;
+    const optional<Move> root;
     const vector<Move> branches;
 
     explicit Node(const vector<Move> & branches) : root(), branches(branches) {};
-    Node(const Move& root, vector<Move> branches)
-        : root(std::make_shared<const Move>(root)), branches(std::move(branches)) {};
+    Node(const Move& root, vector<Move> branches) : root(root), branches(std::move(branches)) {};
 };
 
 

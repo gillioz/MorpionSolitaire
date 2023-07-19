@@ -1,23 +1,14 @@
 #include "../include/GridFootprint.h"
-#include "../include/Grid.h"
 
-GridFootprint::GridFootprint(const Grid& grid)
+GridFootprint::GridFootprint(const Grid& grid) : min(Point(IMAGESIZE / 2)), max(Point(IMAGESIZE / 2))
 {
     if (grid.initialDots.empty())
-    {
-        xMin = 32;
-        yMin = 32;
-        xMax = 32;
-        yMax = 32;
         return;
-    }
-    GridPoint startingPoint = grid.initialDots[0];
-    xMin = startingPoint.x;
-    yMin = startingPoint.y;
-    xMax = startingPoint.x;
-    yMax = startingPoint.y;
 
-    for (const GridPoint& pt: grid.initialDots)
+    min = Coordinates(grid.initialDots[0]);
+    max = min;
+
+    for (Point pt: grid.initialDots)
         add(pt);
     for (const GridMove& move: grid.moves)
     {
@@ -26,25 +17,28 @@ GridFootprint::GridFootprint(const Grid& grid)
     }
 }
 
-void GridFootprint::add(const Point& pt)
+void GridFootprint::add(Coordinates coord)
 {
-    if (pt.x < xMin)
-        xMin = pt.x;
-    else if (pt.x > xMax)
-        xMax = pt.x;
+    if (coord.x() < min.x())
+        min.first = coord.x();
+    else if (coord.x() > max.x())
+        max.first = coord.x();
 
-    if (pt.y < yMin)
-        yMin = pt.y;
-    else if (pt.y > yMax)
-        yMax = pt.y;
+    if (coord.y() < min.y())
+        min.second = coord.y();
+    else if (coord.y() > max.y())
+        max.second = coord.y();
 }
 
-GridPoint GridFootprint::minCorner() const
+void GridFootprint::add(Point pt)
 {
-    return {xMin, yMin};
+    add(Coordinates(pt));
 }
 
-GridPoint GridFootprint::maxCorner() const
+void GridFootprint::pad(int width)
 {
-    return {xMax, yMax};
+    min.first -= width;
+    min.second -= width;
+    max.first += width;
+    max.second += width;
 }

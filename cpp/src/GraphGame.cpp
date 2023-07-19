@@ -1,7 +1,8 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "misc-no-recursion"
 #include "../include/GraphGame.h"
 #include <algorithm>
 #include <iostream>
-#include <memory>
 #include <random>
 
 using std::cout, std::endl;
@@ -17,8 +18,8 @@ void GraphGame::buildGraph()
     image.clear();
 
     // add initial points
-    for (const GridPoint& dot: grid.initialDots)
-        image.set(dot.toImagePoint(), true);
+    for (Point dot: grid.initialDots)
+        image.value[dot] = true;
     nodes.emplace_back(findAllMoves()); // computes all possible moves
 
     // add moves successively
@@ -43,7 +44,7 @@ void GraphGame::play(const Move& move)
     vector<Move> branches = findNewMoves(move.dot);
     for (const Move& branch: nodes.back().branches)
         if (isValidMove(branch))
-            branches.push_back(branch);
+            branches.emplace_back(branch);
     nodes.emplace_back(move, branches);
 }
 
@@ -52,7 +53,7 @@ void GraphGame::play(int index)
     play(nodes.back().branches[index]);
 }
 
-bool GraphGame::tryPlay(const GridLine &line)
+bool GraphGame::tryPlay(const Line &line)
 {
     for (const Move& move: nodes.back().branches)
         if (move.line == line)
@@ -64,7 +65,7 @@ bool GraphGame::tryPlay(const GridLine &line)
     return false;
 }
 
-bool GraphGame::tryPlay(const GridLine &line, const GridPoint &dot)
+bool GraphGame::tryPlay(const Line &line, Point dot)
 {
     for (const Move& move: nodes.back().branches)
         if (move.line == line)
@@ -116,8 +117,8 @@ void GraphGame::undo()
     // remove last move of the grid
     grid.moves.pop_back();
 
-    // undo last move on the image
-    image.apply(*nodes.back().root, false);
+    // undo last move on the value
+    image.apply(nodes.back().root.value(), false);
 
     // remove last node
     nodes.pop_back();
@@ -171,7 +172,15 @@ vector<int> GraphGame::repeatPlayAtRandom(int n, char type, int length, bool dis
     return result;
 }
 
-void GraphGame::playNestedMC(int level)
+vector<Move> GraphGame::getSequenceOfMoves(int score)
+{
+    vector<Move> result;
+    for (int i = (int)nodes.size() - 1; i > score; i--)
+        result.emplace_back(nodes[i].root.value());
+    return result;
+}
+
+void GraphGame::playNestedMC(int level, vector<Move> & bestBranch)
 {
     if (level == 0)
         playAtRandom();
@@ -180,22 +189,27 @@ void GraphGame::playNestedMC(int level)
         if (nodes.back().branches.empty())
             return;
         int currentScore = getScore();
-        const vector<Move>& branches = nodes.back().branches;
-        int branchCount = branches.size();
-        int bestScore = currentScore;
-        int bestMove;
-        for (int i = 0; i < branchCount; i++)
+        int bestScore = currentScore + (int)bestBranch.size();
+        vector<Move> branches = nodes.back().branches;  // TODO: avoid making a copy here!
+        for (const Move& move: branches)
         {
-            play(i);
+            play(move);
             playNestedMC(level - 1);
             int score = getScore();
             if (score > bestScore){
                 bestScore = score;
-                bestMove = i;
+                bestBranch = getSequenceOfMoves(currentScore);
             }
             revertToScore(currentScore);
         }
-        play(bestMove);
-        playNestedMC(level);
+        play(bestBranch.back());
+        bestBranch.pop_back();
+        playNestedMC(level, bestBranch);
     }
+}
+
+void GraphGame::playNestedMC(int level)
+{
+    vector<Move> bestBranch;
+    playNestedMC(level, bestBranch);
 }

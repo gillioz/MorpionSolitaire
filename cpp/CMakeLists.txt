@@ -9,12 +9,11 @@ find_package(pybind11 REQUIRED)
 set(GAME_SOURCES
         src/Game.cpp
         src/Grid.cpp
-        src/GridPoint.cpp
         src/Image.cpp
-        src/ImagePoint.cpp
+        src/Line.cpp
+        src/Coordinates.cpp
         src/Point.cpp
-        src/GridFootprint.cpp
-        src/GridLine.cpp)
+        src/GridFootprint.cpp)
 
 set(GRAPHGAME_SOURCES
         src/GraphGame.cpp)

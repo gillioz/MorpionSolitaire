@@ -2,6 +2,7 @@
 #include <cassert>
 #include <chrono>
 #include "../include/GraphGame.h"
+#include "../include/Coordinates.h"
 
 using namespace std;
 
@@ -15,31 +16,31 @@ int main()
 
     cout << "Counting possible moves...";
     assert (game.getNumberOfMoves() == 28);
-    assert (game.tryPlay({{30, 36}, {34, 36}}));
+    assert (game.tryPlay({Coordinates(30, 36).toPoint(), Coordinates(34, 36).toPoint()}));
     assert (game.getNumberOfMoves() == 26);
     cout << "ok" << endl;
 
     cout << "Trying to add a bunch of illegal segments...";
-    assert (!game.tryPlay({{30, 30}, {30, 30}}));
-    assert (!game.tryPlay({{30, 30}, {30, 34}}));
-    assert (!game.tryPlay({{30, 26}, {34, 30}}));
+    assert (!game.tryPlay({Coordinates(30, 30).toPoint(), Coordinates(30, 30).toPoint()}));
+    assert (!game.tryPlay({Coordinates(30, 30).toPoint(), Coordinates(30, 34).toPoint()}));
+    assert (!game.tryPlay({Coordinates(30, 26).toPoint(), Coordinates(34, 30).toPoint()}));
     cout << "ok" << endl;
 
     cout << "Adding a bunch of legal segments...";
-    assert (game.tryPlay({{29,27},{33,27}}));
-    assert (game.tryPlay({{31,27},{27,31}}));
-    assert (game.tryPlay({{30,26},{30,30}}));
-    assert (game.tryPlay({{30,26},{34,30}}));
+    assert (game.tryPlay({Coordinates(29, 27).toPoint(), Coordinates(33, 27).toPoint()}));
+    assert (game.tryPlay({Coordinates(31, 27).toPoint(), Coordinates(27, 31).toPoint()}));
+    assert (game.tryPlay({Coordinates(30, 26).toPoint(), Coordinates(30, 30).toPoint()}));
+    assert (game.tryPlay({Coordinates(30, 26).toPoint(), Coordinates(34, 30).toPoint()}));
     assert (game.getScore() == 5);
     cout << "ok" << endl;
 
     cout << "Undo and redo a move...";
-    assert (!game.tryPlay({{30, 26}, {34, 30}}));
+    assert (!game.tryPlay({Coordinates(30, 26).toPoint(), Coordinates(34, 30).toPoint()}));
     game.undo();
     assert (game.getScore() == 4);
-    assert (game.tryPlay({{30, 26}, {34, 30}}));
+    assert (game.tryPlay({Coordinates(30, 26).toPoint(), Coordinates(34, 30).toPoint()}));
     assert (game.getScore() == 5);
-    assert (!game.tryPlay({{30, 26}, {34, 30}}));
+    assert (!game.tryPlay({Coordinates(30, 26).toPoint(), Coordinates(34, 30).toPoint()}));
     cout << "ok" << endl;
 
     cout << "Restart the game...";
@@ -68,11 +69,9 @@ int main()
 
     cout << "Playing using the nested Monte-Carlo algorithm...";
     game.restart();
-    game.playNestedMC(1);
+    game.playNestedMC(2);
     assert (game.getScore() >= 20);
     cout << "ok" << endl;
-
-//    game.print();
 
     cout << "Restart the game...";
     game.restart();

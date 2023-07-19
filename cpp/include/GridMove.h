@@ -1,17 +1,14 @@
 #ifndef CPPMORPIONSOLITAIRE_GRIDMOVE_H
 #define CPPMORPIONSOLITAIRE_GRIDMOVE_H
 
-#include <utility>
-
-#include "GridPoint.h"
-#include "GridLine.h"
-
+#include "Point.h"
+#include "Line.h"
 
 struct GridMove {
-    const GridPoint dot;
-    const GridLine line;
+    const Point dot;
+    const Line line;
 
-    GridMove(GridPoint dot, GridLine line) : dot(dot), line(std::move(line)) {};
+    GridMove(Point dot, Line line) : dot(dot), line(line) {};
 };
 
 

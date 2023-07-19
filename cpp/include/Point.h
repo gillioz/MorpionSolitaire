@@ -1,19 +1,17 @@
 #ifndef CPPMORPIONSOLITAIRE_POINT_H
 #define CPPMORPIONSOLITAIRE_POINT_H
 
-struct Point {
-    const int x;
-    const int y;
 
-    Point(int x, int y) : x(x), y(y) {};
+#include <cstdint>
 
-    bool operator==(const Point& other) const;
-    bool operator!=(const Point& other) const;
-    bool operator<(const Point& other) const;
-    bool operator>(const Point& other) const;
+const int IMAGESIZE = 3 * 64;
 
-    static Point min(const Point& pt1, const Point& pt2);
-    static Point max(const Point& pt1, const Point& pt2);
-};
+// Points are pairs of integers in the range (0, IMAGESIZE),
+// stored for convenience into a single int
+typedef int Point;
+
+Point makePoint(int x, int y);
+int getX(Point pt);
+int getY(Point pt);
 
 #endif //CPPMORPIONSOLITAIRE_POINT_H

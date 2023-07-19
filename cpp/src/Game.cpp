@@ -1,4 +1,6 @@
 #include "../include/Game.h"
+#include "../include/Coordinates.h"
+#include "../include/GridFootprint.h"
 #include <iostream>
 #include <utility>
 
@@ -16,8 +18,8 @@ void Game::buildImage()
     image.clear();
 
     // add initial points
-    for (const GridPoint& dot: grid.initialDots)
-        image.set(dot.toImagePoint(), true);
+    for (Point dot: grid.initialDots)
+        image.value[dot] = true;
 
     // add moves successively
     for (const GridMove& gridMove: grid.moves)
@@ -29,12 +31,12 @@ void Game::buildImage()
     }
 }
 
-optional<Move> Game::tryBuildMove(const GridLine& line) const
+optional<Move> Game::tryBuildMove(const Line& line) const
 {
     return image.tryBuildMove(line, grid.length, grid.disjoint);
 }
 
-optional<Move> Game::tryBuildMove(const GridLine& line, const GridPoint& dot) const
+optional<Move> Game::tryBuildMove(const Line& line, Point dot) const
 {
     optional<Move> move = tryBuildMove(line);
     if (!move.has_value() || move->dot != dot)
@@ -53,7 +55,7 @@ void Game::applyMove(const Move& move)
     image.apply(move);
 }
 
-bool Game::tryPlay(const GridLine& line)
+bool Game::tryPlay(const Line& line)
 {
     optional<Move> move = tryBuildMove(line);
 
@@ -64,7 +66,7 @@ bool Game::tryPlay(const GridLine& line)
     return true;
 }
 
-bool Game::tryPlay(const GridLine& line, const GridPoint &dot)
+bool Game::tryPlay(const Line& line, Point dot)
 {
     optional<Move> move = tryBuildMove(line, dot);
 
@@ -75,7 +77,7 @@ bool Game::tryPlay(const GridLine& line, const GridPoint &dot)
     return true;
 }
 
-void Game::tryAddMoveToList(const GridLine& line, vector<Move>& listOfMoves) const
+void Game::tryAddMoveToList(const Line& line, vector<Move>& listOfMoves) const
 {
     optional<Move> move = tryBuildMove(line);
     if (move.has_value())
@@ -85,37 +87,50 @@ void Game::tryAddMoveToList(const GridLine& line, vector<Move>& listOfMoves) con
 vector<Move> Game::findAllMoves() const
 {
     GridFootprint footprint(grid);
+
     vector<Move> result;
 
-    for (int x = footprint.xMin; x <= footprint.xMax; x++)
-        for (int y = footprint.yMin - 1; y <= footprint.yMax - grid.length + 1; y++)
-            tryAddMoveToList({{x, y}, {x, y + grid.length}}, result);
-
-    for (int x = footprint.xMin - 1; x <= footprint.xMax - grid.length + 1; x++)
-        for (int y = footprint.yMin; y <= footprint.yMax; y++)
-            tryAddMoveToList({{x, y}, {x + grid.length, y}}, result);
-
-    for (int x = footprint.xMin - 1; x <= footprint.xMax - grid.length + 1; x++)
-        for (int y = footprint.yMin - 1; y <= footprint.yMax - grid.length + 1; y++)
+    for (int x = footprint.min.x(); x <= footprint.max.x(); x++)
+        for (int y = footprint.min.y() - 1; y <= footprint.max.y() - grid.length + 1; y++)
         {
-            tryAddMoveToList({{x, y}, {x + grid.length, y + grid.length}}, result);
-            tryAddMoveToList({{x + grid.length, y}, {x, y + grid.length}}, result);
+            Point pt = Coordinates(x, y).toPoint();
+            tryAddMoveToList({pt, pt + grid.length * VERTICAL}, result);
+        }
+
+    for (int x = footprint.min.x() - 1; x <= footprint.max.x() - grid.length + 1; x++)
+        for (int y = footprint.min.y(); y <= footprint.max.y(); y++)
+        {
+            Point pt = Coordinates(x, y).toPoint();
+            tryAddMoveToList({pt, pt + grid.length * HORIZONTAL}, result);
+        }
+
+    for (int x = footprint.min.x() - 1; x <= footprint.max.x() - grid.length + 1; x++)
+        for (int y = footprint.min.y() - 1; y <= footprint.max.y() - grid.length + 1; y++)
+        {
+            Point pt = Coordinates(x, y).toPoint();
+            tryAddMoveToList({pt, pt + grid.length * DIAGONAL1}, result);
+        }
+
+    for (int x = footprint.min.x() - 1; x <= footprint.max.x() - grid.length + 1; x++)
+        for (int y = footprint.min.y() + grid.length - 1; y <= footprint.max.y() + 1; y++) {
+            Point pt = Coordinates(x, y).toPoint();
+            tryAddMoveToList({pt, pt + grid.length * DIAGONAL2}, result);
         }
 
     return result;
 }
 
-vector<Move> Game::findNewMoves(const GridPoint &dot) const
+vector<Move> Game::findNewMoves(Point dot) const
 {
     vector<Move> result;
 
-    for (int d1 = 0; d1 <= grid.length; d1++)
+    for (int i1 = 0; i1 <= grid.length; i1++)
     {
-        int d2 = d1 - grid.length;
-        tryAddMoveToList({{dot.x, dot.y + d1}, {dot.x, dot.y + d2}}, result);
-        tryAddMoveToList({{dot.x + d1, dot.y}, {dot.x + d2, dot.y}}, result);
-        tryAddMoveToList({{dot.x + d1, dot.y + d1}, {dot.x + d2, dot.y + d2}}, result);
-        tryAddMoveToList({{dot.x + d1, dot.y - d1}, {dot.x + d2, dot.y - d2}}, result);
+        int i2 = i1 - grid.length;
+        tryAddMoveToList({dot + i1 * HORIZONTAL, dot + i2 * HORIZONTAL}, result);
+        tryAddMoveToList({dot + i1 * VERTICAL, dot + i2 * VERTICAL}, result);
+        tryAddMoveToList({dot + i1 * DIAGONAL1, dot + i2 * DIAGONAL1}, result);
+        tryAddMoveToList({dot + i1 * DIAGONAL2, dot + i2 * DIAGONAL2}, result);
     }
 
     return result;
@@ -146,8 +161,10 @@ int Game::getScore() const
 void Game::print() const
 {
     GridFootprint footprint(grid);
-    ImagePoint minCorner = footprint.minCorner().toImagePoint(-3);
-    ImagePoint maxCorner = footprint.maxCorner().toImagePoint(6);
-    image.print(minCorner.x, maxCorner.x, minCorner.y, maxCorner.y);
+    footprint.pad(2);
+    Point min = footprint.min.toPoint();
+    Point max = footprint.max.toPoint();
+
+    image.print(getX(min), getX(max), getY(min), getY(max));
     cout << "Score: " << getScore() << endl;
 }

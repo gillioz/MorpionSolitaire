@@ -2,6 +2,7 @@
 #include <pybind11/embed.h>
 #include <sstream>
 #include "../include/GraphGame.h"
+#include "../include/GridFootprint.h"
 
 using namespace std;
 namespace py = pybind11;
@@ -14,9 +15,9 @@ public:
     void print() const override
     {
         GridFootprint footprint(grid);
-        int padding = 3;
-        int offset = min(footprint.xMin, footprint.yMin) - padding;
-        int size = max(footprint.xMax, footprint.yMax) - offset + 2 * padding - 2;
+        footprint.pad(3);
+        int offset = min(footprint.min.x(), footprint.min.y());
+        int size = max(footprint.max.x(), footprint.max.y()) - offset + 1;
 
         stringstream printCommand;
         printCommand << "import matplotlib.pyplot as plt" << endl;
@@ -29,14 +30,20 @@ public:
             << "xticks=viewrange, xticklabels='', yticks=viewrange, yticklabels='')" << endl;
         printCommand << "plt.grid()" << endl;
 
-        for (GridPoint pt: grid.initialDots)
-            printCommand << "plt.plot(" << pt.x << "," << pt.y << ", color='k', marker='o', markersize=4)" << endl;
+        for (Point pt: grid.initialDots)
+        {
+            Coordinates p(pt);
+            printCommand << "plt.plot(" << p.x() << "," << p.y() << ", color='r', marker='o', markersize=5)" << endl;
+        }
 
         for (GridMove move: grid.moves)
         {
-            printCommand << "plt.plot([" << move.line.pt1.x << "," << move.line.pt2.x << "], ["
-                << move.line.pt1.y << ", " << move.line.pt2.y << "], color='k')" << endl;
-            printCommand << "plt.plot(" << move.dot.x << "," << move.dot.y
+            Coordinates p1(move.line.pt1);
+            Coordinates p2(move.line.pt2);
+            printCommand << "plt.plot([" << p1.x() << "," << p2.x() << "], ["
+                << p1.y() << ", " << p2.y() << "], color='k')" << endl;
+            Coordinates p(move.dot);
+            printCommand << "plt.plot(" << p.x() << "," << p.y()
                 << ", color='k', marker='o', markersize=4)" << endl;
         }
 
@@ -58,7 +65,7 @@ PYBIND11_MODULE(PyMorpionSolitaire, m)
             .def("playByIndex", py::overload_cast<int>(&PyGraphGame::play))
             .def("playAtRandom", py::overload_cast<>(&PyGraphGame::playAtRandom))
             .def("playAtRandom", py::overload_cast<int>(&PyGraphGame::playAtRandom))
-            .def("playNestedMC", &PyGraphGame::playNestedMC)
+            .def("playNestedMC", py::overload_cast<int>(&PyGraphGame::playNestedMC))
             .def("undo", py::overload_cast<>(&PyGraphGame::undo))
             .def("undo", py::overload_cast<int>(&PyGraphGame::undo))
             .def("restart", &PyGraphGame::restart)
