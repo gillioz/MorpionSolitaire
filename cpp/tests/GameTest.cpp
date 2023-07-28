@@ -9,7 +9,7 @@ int main(){
     cout << "Running Morpion Solitaire tests" << endl;
 
     cout << "Creating a game...";
-    Game game;
+    Game<4, false> game;
     cout << "ok" << endl;
 
     cout << "Counting possible moves...";
@@ -58,7 +58,7 @@ int main(){
     cout << "ok" << endl;
 
     cout << "Create empty game...";
-    Game emptyGame('e');
+    Game<4, false> emptyGame('e');
     assert (emptyGame.getScore() == 0);
     assert (emptyGame.findAllMoves().empty());
     cout << "ok" << endl;

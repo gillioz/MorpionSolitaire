@@ -1,9 +1,10 @@
 #ifndef CPPMORPIONSOLITAIRE_IMAGEMOVE_H
 #define CPPMORPIONSOLITAIRE_IMAGEMOVE_H
 
-#include <vector>
+#include <array>
 #include "Point.h"
 
-typedef std::vector<Point> ImageMove;
+template <size_t length, bool disjoint>
+using ImageMove = std::array<Point, disjoint ? 2 * length + 3 : 2 * length + 1>;
 
 #endif //CPPMORPIONSOLITAIRE_IMAGEMOVE_H

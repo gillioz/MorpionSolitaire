@@ -11,25 +11,26 @@
 
 using std::optional, std::vector;
 
+template <size_t length, bool disjoint>
 class Game {
 protected:
     Grid grid;
-    Image image;
+    Image<length, disjoint> image;
 
     void buildImage();
-    void tryAddMoveToList(const Line& line, vector<Move>& listOfMoves) const;
+    void tryAddMoveToList(const Line& line, vector<Move<length, disjoint>>& listOfMoves) const;
 
 public:
-    explicit Game(char type = 'c', int length = 4, bool disjoint = false, bool build = true);
+    explicit Game(char type = 'c', bool build = true);
 
-    optional<Move> tryBuildMove(const Line& line) const;
-    optional<Move> tryBuildMove(const Line& line, Point dot) const;
-    bool isValidMove(const Move& move) const;
-    void applyMove(const Move& move);
+    optional<Move<length, disjoint>> tryBuildMove(const Line& line) const;
+    optional<Move<length, disjoint>> tryBuildMove(const Line& line, Point dot) const;
+    bool isValidMove(const Move<length, disjoint>& move) const;
+    void applyMove(const Move<length, disjoint>& move);
     virtual bool tryPlay(const Line& line);
     virtual bool tryPlay(const Line& line, Point dot);
-    vector<Move> findAllMoves() const;
-    vector<Move> findNewMoves(Point dot) const;
+    vector<Move<length, disjoint>> findAllMoves() const;
+    vector<Move<length, disjoint>> findNewMoves(Point dot) const;
     virtual void undo();
     virtual void undo(int steps);
     virtual void restart();

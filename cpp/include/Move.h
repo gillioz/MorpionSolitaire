@@ -1,19 +1,20 @@
 #ifndef CPPMORPIONSOLITAIRE_MOVE_H
 #define CPPMORPIONSOLITAIRE_MOVE_H
 
-#include <vector>
+#include <array>
 #include "Point.h"
 #include "GridMove.h"
 #include "ImageMove.h"
 
-using std::vector;
+using std::array;
 
-struct Move : GridMove, ImageMove
+template <size_t length, bool disjoint>
+struct Move : GridMove, ImageMove<length, disjoint>
 {
-    const vector<Point> existingDots;
+    const array<Point, length> existingDots;
 
-    Move(Point dot, Line line, const ImageMove& points, const vector<Point>& existingDots)
-            : GridMove(dot, line), ImageMove(points), existingDots(existingDots) {};
+    Move(Point dot, Line line, const ImageMove<length, disjoint>& points, const array<Point, length>& existingDots)
+            : GridMove(dot, line), ImageMove<length, disjoint>(points), existingDots(existingDots) {};
 };
 
 

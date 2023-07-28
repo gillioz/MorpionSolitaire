@@ -1,6 +1,5 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "misc-no-recursion"
 #include "../include/GraphGame.h"
+
 #include <algorithm>
 #include <iostream>
 #include <random>
@@ -8,54 +7,61 @@
 using std::cout, std::endl;
 using std::string;
 
-GraphGame::GraphGame(char type, int length, bool disjoint) : Game(type, length, disjoint, false), nodes()
+template <size_t length, bool disjoint>
+GraphGame<length, disjoint>::GraphGame(char type) : Game<length, disjoint>(type), nodes()
 {
     buildGraph();
 }
 
-void GraphGame::buildGraph()
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::buildGraph()
 {
-    image.clear();
+    Game<length, disjoint>::image.clear();
 
     // add initial points
-    for (Point dot: grid.initialDots)
-        image.value[dot] = true;
-    nodes.emplace_back(findAllMoves()); // computes all possible moves
+    for (Point dot: Game<length, disjoint>::grid.initialDots)
+        Game<length, disjoint>::image.value[dot] = true;
+    nodes.emplace_back(Game<length, disjoint>::findAllMoves()); // computes all possible moves
 
     // add moves successively
-    for (const GridMove& gridMove: grid.moves)
+    for (const GridMove& gridMove: Game<length, disjoint>::grid.moves)
         if (!tryPlay(gridMove.line, gridMove.dot))
             throw std::logic_error("Trying to load a grid with an invalid segment");
 }
 
-int GraphGame::getScore() const
+template <size_t length, bool disjoint>
+int GraphGame<length, disjoint>::getScore() const
 {
     return (int)nodes.size() - 1;
 }
 
-int GraphGame::getNumberOfMoves() const
+template <size_t length, bool disjoint>
+int GraphGame<length, disjoint>::getNumberOfMoves() const
 {
     return (int)nodes.back().branches.size();
 }
 
-void GraphGame::play(const Move& move)
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::play(const Move<length, disjoint>& move)
 {
-    applyMove(move);
-    vector<Move> branches = findNewMoves(move.dot);
-    for (const Move& branch: nodes.back().branches)
-        if (isValidMove(branch))
+    Game<length, disjoint>::applyMove(move);
+    vector<Move<length, disjoint>> branches = Game<length, disjoint>::findNewMoves(move.dot);
+    for (const Move<length, disjoint>& branch: nodes.back().branches)
+        if (Game<length, disjoint>::isValidMove(branch))
             branches.emplace_back(branch);
     nodes.emplace_back(move, branches);
 }
 
-void GraphGame::play(int index)
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::play(int index)
 {
     play(nodes.back().branches[index]);
 }
 
-bool GraphGame::tryPlay(const Line &line)
+template <size_t length, bool disjoint>
+bool GraphGame<length, disjoint>::tryPlay(const Line &line)
 {
-    for (const Move& move: nodes.back().branches)
+    for (const Move<length, disjoint>& move: nodes.back().branches)
         if (move.line == line)
         {
             play(move);
@@ -65,9 +71,10 @@ bool GraphGame::tryPlay(const Line &line)
     return false;
 }
 
-bool GraphGame::tryPlay(const Line &line, Point dot)
+template <size_t length, bool disjoint>
+bool GraphGame<length, disjoint>::tryPlay(const Line &line, Point dot)
 {
-    for (const Move& move: nodes.back().branches)
+    for (const Move<length, disjoint>& move: nodes.back().branches)
         if (move.line == line)
         {
             if (dot != move.dot)
@@ -79,7 +86,8 @@ bool GraphGame::tryPlay(const Line &line, Point dot)
     return false;
 }
 
-int GraphGame::randomInt(int max, int min)
+template <size_t length, bool disjoint>
+int GraphGame<length, disjoint>::randomInt(int max, int min)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -87,7 +95,8 @@ int GraphGame::randomInt(int max, int min)
     return dist(gen);
 }
 
-void GraphGame::playAtRandom(int n)
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::playAtRandom(int n)
 {
     if (n <= 0) return;
 
@@ -98,7 +107,8 @@ void GraphGame::playAtRandom(int n)
     playAtRandom(n - 1);
 }
 
-void GraphGame::playAtRandom()
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::playAtRandom()
 {
     while (true)
     {
@@ -109,55 +119,62 @@ void GraphGame::playAtRandom()
     }
 }
 
-void GraphGame::undo()
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::undo()
 {
     if ((int)nodes.size() <= 1)
         throw std::invalid_argument("Cannot undo at score zero");
 
     // remove last move of the grid
-    grid.moves.pop_back();
+    Game<length, disjoint>::grid.moves.pop_back();
 
     // undo last move on the value
-    image.apply(nodes.back().root.value(), false);
+    Game<length, disjoint>::image.apply(nodes.back().root.value(), false);
 
     // remove last node
     nodes.pop_back();
 }
 
-void GraphGame::undo(int steps)
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::undo(int steps)
 {
-    while (steps > 0 && !grid.moves.empty())
+    while (steps > 0 && !Game<length, disjoint>::grid.moves.empty())
     {
         undo();
         steps--;
     }
 }
 
-void GraphGame::restart()
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::restart()
 {
     undo(getScore());
 }
 
-void GraphGame::print() const
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::print() const
 {
-    Game::print();
+    Game<length, disjoint>::print();
     cout << "Number of possible moves: " << getNumberOfMoves() << endl;
 }
 
-void GraphGame::revertToScore(int score)
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::revertToScore(int score)
 {
     undo(getScore() - score);
 }
 
-void GraphGame::revertToRandomScore()
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::revertToRandomScore()
 {
     revertToScore(randomInt(getScore() - 2));
 }
 
-vector<int> GraphGame::repeatPlayAtRandom(int n, char type, int length, bool disjoint)
+template <size_t length, bool disjoint>
+vector<int> GraphGame<length, disjoint>::repeatPlayAtRandom(int n, char type)
 {
     vector<int> result(60);
-    GraphGame gameGraph(type, length, disjoint);
+    GraphGame<length, disjoint> gameGraph(type);
     for (int i = 0; i < n; i++)
     {
         gameGraph.restart();
@@ -172,15 +189,17 @@ vector<int> GraphGame::repeatPlayAtRandom(int n, char type, int length, bool dis
     return result;
 }
 
-vector<Move> GraphGame::getSequenceOfMoves(int score)
+template <size_t length, bool disjoint>
+vector<Move<length, disjoint>> GraphGame<length, disjoint>::getSequenceOfMoves(int score)
 {
-    vector<Move> result;
+    vector<Move<length, disjoint>> result;
     for (int i = (int)nodes.size() - 1; i > score; i--)
         result.emplace_back(nodes[i].root.value());
     return result;
 }
 
-void GraphGame::playNestedMC(int level, vector<Move> & bestBranch)
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::playNestedMC(int level, vector<Move<length, disjoint>> & bestBranch)
 {
     if (level == 0)
         playAtRandom();
@@ -190,8 +209,8 @@ void GraphGame::playNestedMC(int level, vector<Move> & bestBranch)
             return;
         int currentScore = getScore();
         int bestScore = currentScore + (int)bestBranch.size();
-        vector<Move> branches = nodes.back().branches;  // TODO: avoid making a copy here!
-        for (const Move& move: branches)
+        vector<Move<length, disjoint>> branches = nodes.back().branches;  // TODO: avoid making a copy here!
+        for (const Move<length, disjoint>& move: branches)
         {
             play(move);
             playNestedMC(level - 1);
@@ -208,8 +227,14 @@ void GraphGame::playNestedMC(int level, vector<Move> & bestBranch)
     }
 }
 
-void GraphGame::playNestedMC(int level)
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::playNestedMC(int level)
 {
-    vector<Move> bestBranch;
+    vector<Move<length, disjoint>> bestBranch;
     playNestedMC(level, bestBranch);
 }
+
+template class GraphGame <4, false>;
+template class GraphGame <4, true>;
+template class GraphGame <3, false>;
+template class GraphGame <3, true>;

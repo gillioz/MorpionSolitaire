@@ -7,13 +7,15 @@
 using std::cout, std::endl;
 using std::string;
 
-Game::Game(char type, int length, bool disjoint, bool build) : grid(type, length, disjoint)
+template <size_t length, bool disjoint>
+Game<length, disjoint>::Game(char type, bool build) : grid(type, length, disjoint)
 {
     if (build)
         buildImage();
 }
 
-void Game::buildImage()
+template <size_t length, bool disjoint>
+void Game<length, disjoint>::buildImage()
 {
     image.clear();
 
@@ -24,71 +26,79 @@ void Game::buildImage()
     // add moves successively
     for (const GridMove& gridMove: grid.moves)
     {
-        optional<Move> move = tryBuildMove(gridMove.line);
+        optional<Move<length, disjoint>> move = tryBuildMove(gridMove.line);
         if (!move.has_value())
             throw std::logic_error("Trying to load a grid with an invalid segment");
-        image.apply(move.value());
+        image.apply(*move);
     }
 }
 
-optional<Move> Game::tryBuildMove(const Line& line) const
+template <size_t length, bool disjoint>
+optional<Move<length, disjoint>> Game<length, disjoint>::tryBuildMove(const Line& line) const
 {
-    return image.tryBuildMove(line, grid.length, grid.disjoint);
+    return image.tryBuildMove(line);
 }
 
-optional<Move> Game::tryBuildMove(const Line& line, Point dot) const
+template <size_t length, bool disjoint>
+optional<Move<length, disjoint>> Game<length, disjoint>::tryBuildMove(const Line& line, Point dot) const
 {
-    optional<Move> move = tryBuildMove(line);
+    optional<Move<length, disjoint>> move = tryBuildMove(line);
     if (!move.has_value() || move->dot != dot)
         return {};
     return move;
 }
 
-bool Game::isValidMove(const Move& move) const
+template <size_t length, bool disjoint>
+bool Game<length, disjoint>::isValidMove(const Move<length, disjoint>& move) const
 {
     return image.isValidMove(move);
 }
 
-void Game::applyMove(const Move& move)
+template <size_t length, bool disjoint>
+void Game<length, disjoint>::applyMove(const Move<length, disjoint>& move)
 {
     grid.add(move);
     image.apply(move);
 }
 
-bool Game::tryPlay(const Line& line)
+template <size_t length, bool disjoint>
+bool Game<length, disjoint>::tryPlay(const Line& line)
 {
-    optional<Move> move = tryBuildMove(line);
+    optional<Move<length, disjoint>> move = tryBuildMove(line);
 
     if (!move.has_value())
         return false;
 
-    applyMove(move.value());
+    applyMove(*move);
     return true;
 }
 
-bool Game::tryPlay(const Line& line, Point dot)
+template <size_t length, bool disjoint>
+bool Game<length, disjoint>::tryPlay(const Line& line, Point dot)
 {
-    optional<Move> move = tryBuildMove(line, dot);
+    optional<Move<length, disjoint>> move = tryBuildMove(line, dot);
 
     if (!move.has_value())
         return false;
 
-    applyMove(move.value());
+    applyMove(*move);
     return true;
 }
 
-void Game::tryAddMoveToList(const Line& line, vector<Move>& listOfMoves) const
+template <size_t length, bool disjoint>
+void Game<length, disjoint>::tryAddMoveToList(const Line& line, vector<Move<length, disjoint>>& listOfMoves) const
 {
-    optional<Move> move = tryBuildMove(line);
+    optional<Move<length, disjoint>> move = tryBuildMove(line);
     if (move.has_value())
         listOfMoves.push_back(move.value());
 }
 
-vector<Move> Game::findAllMoves() const
+template <size_t length, bool disjoint>
+vector<Move<length, disjoint>> Game<length, disjoint>::findAllMoves() const
 {
     GridFootprint footprint(grid);
 
-    vector<Move> result;
+    vector<Move<length, disjoint>> result;
 
     for (int x = footprint.min.x(); x <= footprint.max.x(); x++)
         for (int y = footprint.min.y() - 1; y <= footprint.max.y() - grid.length + 1; y++)
@@ -120,9 +130,10 @@ vector<Move> Game::findAllMoves() const
     return result;
 }
 
-vector<Move> Game::findNewMoves(Point dot) const
+template <size_t length, bool disjoint>
+vector<Move<length, disjoint>> Game<length, disjoint>::findNewMoves(Point dot) const
 {
-    vector<Move> result;
+    vector<Move<length, disjoint>> result;
 
     for (int i1 = 0; i1 <= grid.length; i1++)
     {
@@ -136,29 +147,34 @@ vector<Move> Game::findNewMoves(Point dot) const
     return result;
 }
 
-void Game::undo()
+template <size_t length, bool disjoint>
+void Game<length, disjoint>::undo()
 {
     grid.remove();
     buildImage();
 }
 
-void Game::undo(int steps)
+template <size_t length, bool disjoint>
+void Game<length, disjoint>::undo(int steps)
 {
     grid.remove(steps);
     buildImage();
 }
 
-void Game::restart()
+template <size_t length, bool disjoint>
+void Game<length, disjoint>::restart()
 {
     undo(getScore());
 }
 
-int Game::getScore() const
+template <size_t length, bool disjoint>
+int Game<length, disjoint>::getScore() const
 {
     return grid.getScore();
 }
 
-void Game::print() const
+template <size_t length, bool disjoint>
+void Game<length, disjoint>::print() const
 {
     GridFootprint footprint(grid);
     footprint.pad(2);
@@ -168,3 +184,8 @@ void Game::print() const
     image.print(getX(min), getX(max), getY(min), getY(max));
     cout << "Score: " << getScore() << endl;
 }
+
+template class Game <4, false>;
+template class Game <4, true>;
+template class Game <3, false>;
+template class Game <3, true>;

@@ -11,7 +11,7 @@ int main()
     cout << "Running Morpion Solitaire tests" << endl;
 
     cout << "Creating a game...";
-    GraphGame game;
+    GraphGame<4, false> game;
     cout << "ok" << endl;
 
     cout << "Counting possible moves...";
@@ -67,7 +67,13 @@ int main()
     assert (game.getNumberOfMoves() == 28);
     cout << "ok" << endl;
 
-    cout << "Playing using the nested Monte-Carlo algorithm...";
+    cout << "Playing using the nested Monte-Carlo algorithm at level 1...";
+    game.restart();
+    game.playNestedMC(1);
+    assert (game.getScore() >= 20);
+    cout << "ok" << endl;
+
+    cout << "Playing using the nested Monte-Carlo algorithm at level 2...";
     game.restart();
     game.playNestedMC(2);
     assert (game.getScore() >= 20);
@@ -80,7 +86,7 @@ int main()
     cout << "ok" << endl;
 
     cout << "Create empty game...";
-    GraphGame emptyGame('e');
+    GraphGame<4, false> emptyGame('e');
     assert (emptyGame.getScore() == 0);
     assert (emptyGame.getNumberOfMoves() == 0);
     cout << "ok" << endl;
@@ -88,7 +94,7 @@ int main()
     cout << "Number of random game played per second: ";
     int nGames = 1000;
     auto timeBefore = std::chrono::high_resolution_clock::now();
-    auto series = GraphGame::repeatPlayAtRandom(nGames);
+    auto series = GraphGame<4, false>::repeatPlayAtRandom(nGames);
     auto timeAfter = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> timeInterval = timeAfter - timeBefore;
     cout << (int)((double)nGames / timeInterval.count() * 1000.0) << endl;

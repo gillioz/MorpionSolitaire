@@ -8,21 +8,22 @@
 
 using std::string, std::vector;
 
-class GraphGame : public Game {
+template <size_t length, bool disjoint>
+class GraphGame : public Game<length, disjoint> {
 private:
-    vector<Node> nodes;
+    vector<Node<length, disjoint>> nodes;
 
     void buildGraph();
-    vector<Move> getSequenceOfMoves(int score = 0);
-    void playNestedMC(int level, vector<Move> & bestBranch);
+    vector<Move<length, disjoint>> getSequenceOfMoves(int score = 0);
+    void playNestedMC(int level, vector<Move<length, disjoint>> & bestBranch);
     static int randomInt(int max, int min = 0);
 
 public:
-    explicit GraphGame(char type = 'c', int length = 4, bool disjoint = false);
+    explicit GraphGame(char type = 'c');
 
     int getScore() const override;
     int getNumberOfMoves() const;
-    void play(const Move& move);
+    void play(const Move<length, disjoint>& move);
     void play(int index);
     bool tryPlay(const Line &line) override;
     bool tryPlay(const Line &line, Point dot) override;
@@ -36,7 +37,7 @@ public:
     void revertToScore(int score);
     void revertToRandomScore();
 
-    static vector<int> repeatPlayAtRandom(int n, char type = 'c', int length = 4, bool disjoint = false);
+    static vector<int> repeatPlayAtRandom(int n, char type = 'c');
 };
 
 

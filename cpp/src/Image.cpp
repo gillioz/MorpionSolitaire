@@ -6,75 +6,90 @@
 #include <iostream>
 #include <string>
 
-using std::optional;
+using std::all_of, std::optional;
 
-void Image::clear()
+template <size_t length, bool disjoint>
+void Image<length, disjoint>::clear()
 {
     std::memset(value, false, sizeof(value));
 }
 
-optional<Move> Image::tryBuildMove(const Line& line, int length, bool disjoint) const
+template <size_t length, bool disjoint>
+optional<Move<length, disjoint>> Image<length, disjoint>::tryBuildMove(const Line& line) const
 {
     int diff = line.pt2 - line.pt1;
-    int directions[4] = {length * HORIZONTAL, length * VERTICAL, length*DIAGONAL1, length*DIAGONAL2};
+    int directions[4] = {(int)length * HORIZONTAL, (int)length * VERTICAL, (int)length*DIAGONAL1, (int)length*DIAGONAL2};
 
     if (diff != directions[0] && diff != directions[1] && diff != directions[2] && diff != directions[3])
         return {}; // the point do not have the correct separation to define a segment
 
     int d = diff / (3 * length);
-    int iMin = disjoint ? -1 : 0;
-    int iMax = disjoint ? 3 * length + 1 : 3 * length;
 
-    vector<Point> points;
-    vector<Point> existingDots;
+    ImageMove<length, disjoint> points;
+    array<Point, length> existingDots;
     optional<Point> dot;
 
-    for (int i = iMin; i <= iMax; i++){
+    int iMin = disjoint ? -1 : 0;
+    int iMax = disjoint ? 3 * length + 1 : 3 * length;
+    auto pointsIterator = points.begin();
+    auto existingDotsIterator = existingDots.begin();
+
+    for (int i = iMin; i <= iMax; i++)
+    {
         Point pt = line.pt1 + i * d;
         if (i % 3 == 0) // dot element
         {
             if (value[pt])
-                existingDots.emplace_back(pt);
+            {
+                *existingDotsIterator = pt;
+                existingDotsIterator++;
+            }
             else
             {
                 if (dot.has_value())
                     return {}; // there cannot be more than one new dot
                 dot.emplace(pt);
-                points.emplace_back(pt);
+                *pointsIterator = pt;
+                pointsIterator++;
             }
         }
         else // line element
         {
             if (value[pt])
                 return {}; // all line elements must be free
-            points.emplace_back(pt);
+            *pointsIterator = pt;
+            pointsIterator++;
         }
     }
 
     if (!dot.has_value())
         return {}; // there must be one new dot
 
-    return Move(dot.value(), line, points, existingDots);
+    return Move<length, disjoint>(*dot, line, points, existingDots);
 }
 
-bool Image::isValidMove(const ImageMove& move) const
+template <size_t length, bool disjoint>
+bool Image<length, disjoint>::isValidMove(const ImageMove<length, disjoint>& move) const
 {
     return all_of(move.begin(), move.end(), [this](Point pt) { return !value[pt]; });
 }
 
-bool Image::isValidMove(const Move& move) const
+template <size_t length, bool disjoint>
+bool Image<length, disjoint>::isValidMove(const Move<length, disjoint>& move) const
 {
     return all_of(move.begin(), move.end(), [this](Point pt) { return !value[pt]; })
         && all_of(move.existingDots.begin(), move.existingDots.end(), [this](Point pt) { return value[pt]; });
 }
 
-void Image::apply(const ImageMove& move, bool value)
+template <size_t length, bool disjoint>
+void Image<length, disjoint>::apply(const ImageMove<length, disjoint>& move, bool value)
 {
     for (Point pt: move)
         this->value[pt] = value;
 }
 
-void Image::print(int xMin, int xMax, int yMin, int yMax) const
+template <size_t length, bool disjoint>
+void Image<length, disjoint>::print(int xMin, int xMax, int yMin, int yMax) const
 {
     const char symbols[] = {'O', '-', '/', '|', '\\'};
 
@@ -95,3 +110,8 @@ void Image::print(int xMin, int xMax, int yMin, int yMax) const
 
     std::cout << std::endl << output << std::endl << std::endl;
 }
+
+template class Image <4, false>;
+template class Image <4, true>;
+template class Image <3, false>;
+template class Image <3, true>;

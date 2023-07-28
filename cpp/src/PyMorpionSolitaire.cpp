@@ -7,14 +7,15 @@
 using namespace std;
 namespace py = pybind11;
 
-class PyGraphGame : public GraphGame
+template <size_t length, bool disjoint>
+class PyGraphGame : public GraphGame<length, disjoint>
 {
 public:
-    using GraphGame::GraphGame; // inherit constructor
+    using GraphGame<length, disjoint>::GraphGame; // inherit constructor
 
     void print() const override
     {
-        GridFootprint footprint(grid);
+        GridFootprint footprint(GraphGame<length, disjoint>::grid);
         footprint.pad(3);
         int offset = min(footprint.min.x(), footprint.min.y());
         int size = max(footprint.max.x(), footprint.max.y()) - offset + 1;
@@ -30,13 +31,13 @@ public:
             << "xticks=viewrange, xticklabels='', yticks=viewrange, yticklabels='')" << endl;
         printCommand << "plt.grid()" << endl;
 
-        for (Point pt: grid.initialDots)
+        for (Point pt: GraphGame<length, disjoint>::grid.initialDots)
         {
             Coordinates p(pt);
             printCommand << "plt.plot(" << p.x() << "," << p.y() << ", color='r', marker='o', markersize=5)" << endl;
         }
 
-        for (GridMove move: grid.moves)
+        for (GridMove move: GraphGame<length, disjoint>::grid.moves)
         {
             Coordinates p1(move.line.pt1);
             Coordinates p2(move.line.pt2);
@@ -47,31 +48,39 @@ public:
                 << ", color='k', marker='o', markersize=4)" << endl;
         }
 
-        printCommand << "plt.title('Score: " << GraphGame::getScore()
-            << "    Number of possible moves: " << GraphGame::getNumberOfMoves() << "')" << endl;
+        printCommand << "plt.title('Score: " << GraphGame<length, disjoint>::getScore()
+            << "    Number of possible moves: " << GraphGame<length, disjoint>::getNumberOfMoves() << "')" << endl;
 
         py::object scope = py::module_::import("__main__").attr("__dict__");
         py::exec(printCommand.str(), scope);
     }
 };
 
+template <size_t length, bool disjoint>
+void declareGame(py::module& m, string name)
+{
+    py::class_<PyGraphGame<length, disjoint>>(m, name.c_str())
+            .def(py::init<char>(), py::arg("type") = 'c')
+            .def("playByIndex", py::overload_cast<int>(&PyGraphGame<length, disjoint>::play))
+            .def("playAtRandom", py::overload_cast<>(&PyGraphGame<length, disjoint>::playAtRandom))
+            .def("playAtRandom", py::overload_cast<int>(&PyGraphGame<length, disjoint>::playAtRandom))
+            .def("playNestedMC", py::overload_cast<int>(&PyGraphGame<length, disjoint>::playNestedMC))
+            .def("undo", py::overload_cast<>(&PyGraphGame<length, disjoint>::undo))
+            .def("undo", py::overload_cast<int>(&PyGraphGame<length, disjoint>::undo))
+            .def("restart", &PyGraphGame<length, disjoint>::restart)
+            .def("revertToScore", &PyGraphGame<length, disjoint>::revertToScore)
+            .def("revertToRandomScore", &PyGraphGame<length, disjoint>::revertToRandomScore)
+            .def("getScore", &PyGraphGame<length, disjoint>::getScore)
+            .def("getNumberOfMoves", &PyGraphGame<length, disjoint>::getNumberOfMoves)
+            .def("print", &PyGraphGame<length, disjoint>::print);
+}
+
 PYBIND11_MODULE(PyMorpionSolitaire, m)
 {
     m.doc() = "Morpion Solitaire module. Author: Marc Gillioz. Date: July 2023";
 
-    py::class_<PyGraphGame>(m, "Game")
-            .def(py::init<char, int, bool>(),
-                    py::arg("type") = 'c', py::arg("length") = 4, py::arg("disjoint") = false)
-            .def("playByIndex", py::overload_cast<int>(&PyGraphGame::play))
-            .def("playAtRandom", py::overload_cast<>(&PyGraphGame::playAtRandom))
-            .def("playAtRandom", py::overload_cast<int>(&PyGraphGame::playAtRandom))
-            .def("playNestedMC", py::overload_cast<int>(&PyGraphGame::playNestedMC))
-            .def("undo", py::overload_cast<>(&PyGraphGame::undo))
-            .def("undo", py::overload_cast<int>(&PyGraphGame::undo))
-            .def("restart", &PyGraphGame::restart)
-            .def("revertToScore", &PyGraphGame::revertToScore)
-            .def("revertToRandomScore", &PyGraphGame::revertToRandomScore)
-            .def("getScore", &PyGraphGame::getScore)
-            .def("getNumberOfMoves", &PyGraphGame::getNumberOfMoves)
-            .def("print", &PyGraphGame::print);
+    declareGame<4, false>(m, "Game5T");
+    declareGame<4, true>(m, "Game5D");
+    declareGame<3, false>(m, "Game4T");
+    declareGame<3, true>(m, "Game4D");
 }

@@ -8,12 +8,14 @@
 
 using std::optional, std::vector;
 
+template <size_t length, bool disjoint>
 struct Node {
-    const optional<Move> root;
-    const vector<Move> branches;
+    const optional<Move<length, disjoint>> root;
+    const vector<Move<length, disjoint>> branches;
 
-    explicit Node(const vector<Move> & branches) : root(), branches(branches) {};
-    Node(const Move& root, vector<Move> branches) : root(root), branches(std::move(branches)) {};
+    explicit Node(const vector<Move<length, disjoint>> & branches) : root(), branches(branches) {};
+    Node(const Move<length, disjoint>& root, vector<Move<length, disjoint>> branches)
+        : root(root), branches(std::move(branches)) {};
 };
 
 
