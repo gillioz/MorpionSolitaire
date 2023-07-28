@@ -10,10 +10,10 @@ using std::vector;
 
 struct Move : GridMove, ImageMove
 {
-    const vector<Point> supportPoints;
+    const vector<Point> existingDots;
 
-    Move(Point dot, Line line, const ImageMove& points, const vector<Point>& supportPoints)
-            : GridMove(dot, line), ImageMove(points), supportPoints(supportPoints) {};
+    Move(Point dot, Line line, const ImageMove& points, const vector<Point>& existingDots)
+            : GridMove(dot, line), ImageMove(points), existingDots(existingDots) {};
 };
 
 

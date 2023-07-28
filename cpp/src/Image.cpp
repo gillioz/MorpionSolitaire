@@ -15,34 +15,26 @@ void Image::clear()
 
 optional<Move> Image::tryBuildMove(const Line& line, int length, bool disjoint) const
 {
-    if (length <= 0) return {};
+    int diff = line.pt2 - line.pt1;
+    int directions[4] = {length * HORIZONTAL, length * VERTICAL, length*DIAGONAL1, length*DIAGONAL2};
 
-    int n = 3 * length;
-    int w = getX(line.pt2) - getX(line.pt1);
-    int h = getY(line.pt2) - getY(line.pt1);
-
-    if ((w != 0 && w != n && w != -n) || (h != 0 && h != n && h != -n) || (w == 0 && h == 0))
+    if (diff != directions[0] && diff != directions[1] && diff != directions[2] && diff != directions[3])
         return {}; // the point do not have the correct separation to define a segment
 
-    int d = (line.pt2 - line.pt1) / n;
-    int iMin = 0;
-    int iMax = 3 * length + 1;
-    if (disjoint)
-    {
-        iMin -= 1;
-        iMax += 1;
-    }
+    int d = diff / (3 * length);
+    int iMin = disjoint ? -1 : 0;
+    int iMax = disjoint ? 3 * length + 1 : 3 * length;
 
     vector<Point> points;
-    vector<Point> supportPoints;
+    vector<Point> existingDots;
     optional<Point> dot;
 
-    for (int i = iMin; i < iMax; i++){
+    for (int i = iMin; i <= iMax; i++){
         Point pt = line.pt1 + i * d;
         if (i % 3 == 0) // dot element
         {
             if (value[pt])
-                supportPoints.emplace_back(pt);
+                existingDots.emplace_back(pt);
             else
             {
                 if (dot.has_value())
@@ -62,7 +54,7 @@ optional<Move> Image::tryBuildMove(const Line& line, int length, bool disjoint) 
     if (!dot.has_value())
         return {}; // there must be one new dot
 
-    return Move(dot.value(), line, points, supportPoints);
+    return Move(dot.value(), line, points, existingDots);
 }
 
 bool Image::isValidMove(const ImageMove& move) const
@@ -73,7 +65,7 @@ bool Image::isValidMove(const ImageMove& move) const
 bool Image::isValidMove(const Move& move) const
 {
     return all_of(move.begin(), move.end(), [this](Point pt) { return !value[pt]; })
-        && all_of(move.supportPoints.begin(), move.supportPoints.end(), [this](Point pt) { return value[pt]; });
+        && all_of(move.existingDots.begin(), move.existingDots.end(), [this](Point pt) { return value[pt]; });
 }
 
 void Image::apply(const ImageMove& move, bool value)

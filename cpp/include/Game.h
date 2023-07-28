@@ -19,11 +19,6 @@ protected:
     void buildImage();
     void tryAddMoveToList(const Line& line, vector<Move>& listOfMoves) const;
 
-    const int HORIZONTAL = makePoint(3, 0);
-    const int VERTICAL = makePoint(0, 3);
-    const int DIAGONAL1 = makePoint(3, 3);
-    const int DIAGONAL2 = makePoint(3, -3);
-
 public:
     explicit Game(char type = 'c', int length = 4, bool disjoint = false, bool build = true);
 
