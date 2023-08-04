@@ -47,7 +47,7 @@ void GraphGame<length, disjoint>::play(const Move<length, disjoint>& move)
     Game<length, disjoint>::applyMove(move);
     vector<Move<length, disjoint>> branches = Game<length, disjoint>::findNewMoves(move.dot);
     for (const Move<length, disjoint>& branch: nodes.back().branches)
-        if (Game<length, disjoint>::isValidMove(branch))
+        if (Game<length, disjoint>::isStillValidMove(branch))
             branches.emplace_back(branch);
     nodes.emplace_back(move, branches);
 }
@@ -209,7 +209,7 @@ void GraphGame<length, disjoint>::playNestedMC(int level, vector<Move<length, di
             return;
         int currentScore = getScore();
         int bestScore = currentScore + (int)bestBranch.size();
-        vector<Move<length, disjoint>> branches = nodes.back().branches;  // TODO: avoid making a copy here!
+        const vector<Move<length, disjoint>> branches = nodes.back().branches;
         for (const Move<length, disjoint>& move: branches)
         {
             play(move);

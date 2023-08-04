@@ -82,6 +82,12 @@ bool Image<length, disjoint>::isValidMove(const Move<length, disjoint>& move) co
 }
 
 template <size_t length, bool disjoint>
+bool Image<length, disjoint>::isStillValidMove(const Move<length, disjoint>& move) const
+{
+    return all_of(move.begin(), move.end(), [this](Point pt) { return !value[pt]; });
+}
+
+template <size_t length, bool disjoint>
 void Image<length, disjoint>::apply(const ImageMove<length, disjoint>& move, bool value)
 {
     for (Point pt: move)

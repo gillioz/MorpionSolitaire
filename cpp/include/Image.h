@@ -18,6 +18,7 @@ struct Image {
     optional<Move<length, disjoint>> tryBuildMove(const Line& line) const;
     bool isValidMove(const ImageMove<length, disjoint>& move) const;
     bool isValidMove(const Move<length, disjoint>& move) const;
+    bool isStillValidMove(const Move<length, disjoint>& move) const;
     void apply(const ImageMove<length, disjoint>& move, bool value = true);
     void print(int xMin = 0, int xMax = IMAGESIZE, int yMin = 0, int yMax = IMAGESIZE) const;
 };

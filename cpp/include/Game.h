@@ -26,6 +26,7 @@ public:
     optional<Move<length, disjoint>> tryBuildMove(const Line& line) const;
     optional<Move<length, disjoint>> tryBuildMove(const Line& line, Point dot) const;
     bool isValidMove(const Move<length, disjoint>& move) const;
+    bool isStillValidMove(const Move<length, disjoint>& move) const;
     void applyMove(const Move<length, disjoint>& move);
     virtual bool tryPlay(const Line& line);
     virtual bool tryPlay(const Line& line, Point dot);

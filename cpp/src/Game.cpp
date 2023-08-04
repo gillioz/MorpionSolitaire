@@ -55,6 +55,12 @@ bool Game<length, disjoint>::isValidMove(const Move<length, disjoint>& move) con
 }
 
 template <size_t length, bool disjoint>
+bool Game<length, disjoint>::isStillValidMove(const Move<length, disjoint>& move) const
+{
+    return image.isStillValidMove(move);
+}
+
+template <size_t length, bool disjoint>
 void Game<length, disjoint>::applyMove(const Move<length, disjoint>& move)
 {
     grid.add(move);
