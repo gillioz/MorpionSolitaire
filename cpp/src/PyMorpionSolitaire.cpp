@@ -1,5 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
+#include <pybind11/numpy.h>
 #include <fstream>
 #include <sstream>
 #include "../include/GraphGame.h"
@@ -66,6 +67,11 @@ public:
         out.close();
     }
 
+    py::array_t<bool> getImage() const
+    {
+        return py::array_t<bool>({IMAGESIZE, IMAGESIZE}, Game<length, disjoint>::image.value);
+    }
+
     static PyGraphGame<length, disjoint> load(const string& filename)
     {
         ostringstream json;
@@ -80,7 +86,7 @@ public:
 };
 
 template <size_t length, bool disjoint>
-void declareGame(py::module& m, string name)
+void declareGame(py::module& m, const string& name)
 {
     py::class_<PyGraphGame<length, disjoint>>(m, name.c_str())
             .def(py::init<char>(), py::arg("type") = 'c')
@@ -98,6 +104,7 @@ void declareGame(py::module& m, string name)
             .def("print", &PyGraphGame<length, disjoint>::print)
             .def("exportJSON", &PyGraphGame<length, disjoint>::exportJSON)
             .def("save", &PyGraphGame<length, disjoint>::save)
+            .def("image", &PyGraphGame<length, disjoint>::getImage)
             .def_static("load", &PyGraphGame<length, disjoint>::load);
 }
 
