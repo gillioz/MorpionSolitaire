@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../include/Game.h"
 #include "../include/Coordinates.h"
+#include "../include/GridDTO.h"
 
 using namespace std;
 
@@ -50,6 +51,13 @@ int main(){
     assert (move2.has_value());
     game.applyMove(move2.value());
     assert (game.findNewMoves(move2->dot).size() == 1);
+    cout << "ok" << endl;
+
+    cout << "Export to JSON and import back...";
+    auto json = game.exportJSON();
+    auto gameCopy = Game<4, false>::importJSON(json);
+    assert (gameCopy.getScore() == game.getScore());
+    assert (gameCopy.findAllMoves().size() == game.findAllMoves().size());
     cout << "ok" << endl;
 
     cout << "Restart the game...";

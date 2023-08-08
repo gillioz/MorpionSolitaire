@@ -2,7 +2,7 @@
 #define CPPMORPIONSOLITAIRE_POINT_H
 
 
-#include <cstdint>
+//#include <cstdint>
 
 const int IMAGESIZE = 3 * 64;
 

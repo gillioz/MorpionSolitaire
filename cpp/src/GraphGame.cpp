@@ -1,4 +1,5 @@
 #include "../include/GraphGame.h"
+#include "../include/GridDTO.h"
 
 #include <algorithm>
 #include <iostream>
@@ -9,6 +10,12 @@ using std::string;
 
 template <size_t length, bool disjoint>
 GraphGame<length, disjoint>::GraphGame(char type) : Game<length, disjoint>(type), nodes()
+{
+    buildGraph();
+}
+
+template <size_t length, bool disjoint>
+GraphGame<length, disjoint>::GraphGame(const Grid& grid) : Game<length, disjoint>(grid, false), nodes()
 {
     buildGraph();
 }
@@ -25,8 +32,13 @@ void GraphGame<length, disjoint>::buildGraph()
 
     // add moves successively
     for (const GridMove& gridMove: Game<length, disjoint>::grid.moves)
-        if (!tryPlay(gridMove.line, gridMove.dot))
+    {
+        optional<Move<length, disjoint>> move = findMove(gridMove.line, gridMove.dot);
+        if (!move.has_value())
             throw std::logic_error("Trying to load a grid with an invalid segment");
+        Game<length, disjoint>::image.apply(*move);
+        addNode(*move);
+    }
 }
 
 template <size_t length, bool disjoint>
@@ -45,6 +57,12 @@ template <size_t length, bool disjoint>
 void GraphGame<length, disjoint>::play(const Move<length, disjoint>& move)
 {
     Game<length, disjoint>::applyMove(move);
+    addNode(move);
+}
+
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::addNode(const Move<length, disjoint>& move)
+{
     vector<Move<length, disjoint>> branches = Game<length, disjoint>::findNewMoves(move.dot);
     for (const Move<length, disjoint>& branch: nodes.back().branches)
         if (Game<length, disjoint>::isStillValidMove(branch))
@@ -59,14 +77,38 @@ void GraphGame<length, disjoint>::play(int index)
 }
 
 template <size_t length, bool disjoint>
-bool GraphGame<length, disjoint>::tryPlay(const Line &line)
+optional<Move<length, disjoint>> GraphGame<length, disjoint>::findMove(const Line& line) const
 {
     for (const Move<length, disjoint>& move: nodes.back().branches)
         if (move.line == line)
         {
-            play(move);
-            return true;
+            return move;
         }
+
+    return {};
+}
+
+template <size_t length, bool disjoint>
+optional<Move<length, disjoint>> GraphGame<length, disjoint>::findMove(const Line& line, Point dot) const
+{
+    for (const Move<length, disjoint>& move: nodes.back().branches)
+        if (move.line == line && move.dot == dot)
+        {
+            return move;
+        }
+
+    return {};
+}
+
+template <size_t length, bool disjoint>
+bool GraphGame<length, disjoint>::tryPlay(const Line &line)
+{
+    optional<Move<length, disjoint>> move = findMove(line);
+    if (move.has_value())
+    {
+        play(*move);
+        return true;
+    }
 
     return false;
 }
@@ -74,14 +116,12 @@ bool GraphGame<length, disjoint>::tryPlay(const Line &line)
 template <size_t length, bool disjoint>
 bool GraphGame<length, disjoint>::tryPlay(const Line &line, Point dot)
 {
-    for (const Move<length, disjoint>& move: nodes.back().branches)
-        if (move.line == line)
-        {
-            if (dot != move.dot)
-                return false;
-            play(move);
-            return true;
-        }
+    optional<Move<length, disjoint>> move = findMove(line, dot);
+    if (move.has_value())
+    {
+        play(*move);
+        return true;
+    }
 
     return false;
 }
@@ -233,6 +273,14 @@ void GraphGame<length, disjoint>::playNestedMC(int level)
     vector<Move<length, disjoint>> bestBranch;
     playNestedMC(level, bestBranch);
 }
+
+template <size_t length, bool disjoint>
+GraphGame<length, disjoint> GraphGame<length, disjoint>::importJSON(const string& json)
+{
+    GridDTO dto(json);
+    return GraphGame<length, disjoint>(dto.toGrid());
+}
+
 
 template class GraphGame <4, false>;
 template class GraphGame <4, true>;

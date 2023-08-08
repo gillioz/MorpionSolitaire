@@ -4,6 +4,9 @@
 Grid::Grid(char type, int length, bool disjoint)
     : length(length), disjoint(disjoint), initialDots(getInitialDots(type, length)) {}
 
+Grid::Grid(int length, bool disjoint, const vector<Point>& initialDots, const vector<GridMove>& moves)
+    : length(length), disjoint(disjoint), initialDots(initialDots), moves(moves) {}
+
 void Grid::add(const GridMove& move)
 {
     moves.emplace_back(move);

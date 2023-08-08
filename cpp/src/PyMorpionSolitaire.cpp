@@ -1,8 +1,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
+#include <fstream>
 #include <sstream>
 #include "../include/GraphGame.h"
 #include "../include/GridFootprint.h"
+#include "../include/GridDTO.h"
 
 using namespace std;
 namespace py = pybind11;
@@ -54,6 +56,27 @@ public:
         py::object scope = py::module_::import("__main__").attr("__dict__");
         py::exec(printCommand.str(), scope);
     }
+
+    void save(const string& filename) const
+    {
+        string json = Game<length, disjoint>::exportJSON();
+
+        ofstream out(filename.c_str());
+        out << json;
+        out.close();
+    }
+
+    static PyGraphGame<length, disjoint> load(const string& filename)
+    {
+        ostringstream json;
+
+        ifstream in(filename.c_str());
+        json << in.rdbuf();
+        in.close();
+
+        GridDTO dto(json.str());
+        return PyGraphGame<length, disjoint>(dto.toGrid());
+    }
 };
 
 template <size_t length, bool disjoint>
@@ -72,7 +95,10 @@ void declareGame(py::module& m, string name)
             .def("revertToRandomScore", &PyGraphGame<length, disjoint>::revertToRandomScore)
             .def("getScore", &PyGraphGame<length, disjoint>::getScore)
             .def("getNumberOfMoves", &PyGraphGame<length, disjoint>::getNumberOfMoves)
-            .def("print", &PyGraphGame<length, disjoint>::print);
+            .def("print", &PyGraphGame<length, disjoint>::print)
+            .def("exportJSON", &PyGraphGame<length, disjoint>::exportJSON)
+            .def("save", &PyGraphGame<length, disjoint>::save)
+            .def_static("load", &PyGraphGame<length, disjoint>::load);
 }
 
 PYBIND11_MODULE(PyMorpionSolitaire, m)

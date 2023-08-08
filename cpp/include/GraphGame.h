@@ -14,19 +14,23 @@ private:
     vector<Node<length, disjoint>> nodes;
 
     void buildGraph();
+    void addNode(const Move<length, disjoint>& move);
     vector<Move<length, disjoint>> getSequenceOfMoves(int score = 0);
     void playNestedMC(int level, vector<Move<length, disjoint>> & bestBranch);
     static int randomInt(int max, int min = 0);
 
 public:
     explicit GraphGame(char type = 'c');
+    explicit GraphGame(const Grid& grid);
 
     int getScore() const override;
     int getNumberOfMoves() const;
     void play(const Move<length, disjoint>& move);
     void play(int index);
-    bool tryPlay(const Line &line) override;
-    bool tryPlay(const Line &line, Point dot) override;
+    optional<Move<length, disjoint>> findMove(const Line& line) const;
+    optional<Move<length, disjoint>> findMove(const Line& line, Point dot) const;
+    bool tryPlay(const Line& line) override;
+    bool tryPlay(const Line& line, Point dot) override;
     void playAtRandom(int n);
     void playAtRandom();
     void playNestedMC(int level);
@@ -37,6 +41,7 @@ public:
     void revertToScore(int score);
     void revertToRandomScore();
 
+    static GraphGame<length, disjoint> importJSON(const string& json);
     static vector<int> repeatPlayAtRandom(int n, char type = 'c');
 };
 

@@ -2,6 +2,7 @@
 #define CPPMORPIONSOLITAIRE_GAME_H
 
 #include <optional>
+#include <string>
 #include <vector>
 #include "Grid.h"
 #include "Image.h"
@@ -9,7 +10,7 @@
 #include "Move.h"
 #include "Point.h"
 
-using std::optional, std::vector;
+using std::optional, std::string, std::vector;
 
 template <size_t length, bool disjoint>
 class Game {
@@ -22,6 +23,7 @@ protected:
 
 public:
     explicit Game(char type = 'c', bool build = true);
+    explicit Game(const Grid& grid, bool build = true);
 
     optional<Move<length, disjoint>> tryBuildMove(const Line& line) const;
     optional<Move<length, disjoint>> tryBuildMove(const Line& line, Point dot) const;
@@ -37,6 +39,9 @@ public:
     virtual void restart();
     virtual int getScore() const;
     virtual void print() const;
+    string exportJSON() const;
+
+    static Game<length, disjoint> importJSON(const string& json);
 };
 
 

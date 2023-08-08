@@ -55,6 +55,13 @@ int main()
     assert (game.getNumberOfMoves() > 0);
     cout << "ok" << endl;
 
+    cout << "Export to JSON and import back...";
+    auto json = game.exportJSON();
+    auto gameCopy = GraphGame<4, false>::importJSON(json);
+    assert (gameCopy.getScore() == game.getScore());
+    assert (gameCopy.getNumberOfMoves() == game.getNumberOfMoves());
+    cout << "ok" << endl;
+
     cout << "Play a game at random...";
     game.playAtRandom();
     assert (game.getScore() >= 20);

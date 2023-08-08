@@ -5,7 +5,7 @@
 #include "Point.h"
 #include "GridMove.h"
 
-using std::pair, std::vector;
+using std::vector;
 
 
 struct Grid
@@ -16,6 +16,7 @@ struct Grid
     vector<GridMove> moves;
 
     explicit Grid(char type = 'e', int length = 4, bool disjoint = false);
+    Grid(int length, bool disjoint, const vector<Point>& initialDots, const vector<GridMove>& moves = {});
 
     void add(const GridMove& move);
     void remove();

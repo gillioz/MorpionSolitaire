@@ -1,15 +1,25 @@
 #include "../include/Game.h"
 #include "../include/Coordinates.h"
 #include "../include/GridFootprint.h"
+#include "../include/GridDTO.h"
 #include <iostream>
-#include <utility>
 
 using std::cout, std::endl;
-using std::string;
+using std::string, std::ifstream, std::ofstream, std::ostringstream;
 
 template <size_t length, bool disjoint>
 Game<length, disjoint>::Game(char type, bool build) : grid(type, length, disjoint)
 {
+    if (build)
+        buildImage();
+}
+
+template <size_t length, bool disjoint>
+Game<length, disjoint>::Game(const Grid& grid, bool build) : grid(grid)
+{
+    if (grid.length != length || grid.disjoint != disjoint)
+        throw std::logic_error("Cannot create game from a grid with incompatible properties");
+
     if (build)
         buildImage();
 }
@@ -189,6 +199,20 @@ void Game<length, disjoint>::print() const
 
     image.print(getX(min), getX(max), getY(min), getY(max));
     cout << "Score: " << getScore() << endl;
+}
+
+template <size_t length, bool disjoint>
+string Game<length, disjoint>::exportJSON() const
+{
+    GridDTO dto(grid);
+    return dto.toJSON();
+}
+
+template <size_t length, bool disjoint>
+Game<length, disjoint> Game<length, disjoint>::importJSON(const string& json)
+{
+    GridDTO dto(json);
+    return Game<length, disjoint>(dto.toGrid());
 }
 
 template class Game <4, false>;

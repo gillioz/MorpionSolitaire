@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O3")
 
 find_package(pybind11 REQUIRED)
+find_package(jsoncpp REQUIRED)
 
 set(GAME_SOURCES
         src/Game.cpp
@@ -13,7 +14,8 @@ set(GAME_SOURCES
         src/Line.cpp
         src/Coordinates.cpp
         src/Point.cpp
-        src/GridFootprint.cpp)
+        src/GridFootprint.cpp
+        src/GridDTO.cpp)
 
 set(GRAPHGAME_SOURCES
         src/GraphGame.cpp)
@@ -26,6 +28,11 @@ pybind11_add_module(PyMorpionSolitaire src/PyMorpionSolitaire.cpp ${GAME_SOURCES
 target_include_directories(MorpionSolitaire PUBLIC include)
 target_include_directories(GameTests PUBLIC include)
 target_include_directories(GraphGameTests PUBLIC include)
+
+target_link_libraries(MorpionSolitaire PRIVATE jsoncpp_lib)
+target_link_libraries(GameTests PRIVATE jsoncpp_lib)
+target_link_libraries(GraphGameTests PRIVATE jsoncpp_lib)
+target_link_libraries(PyMorpionSolitaire PRIVATE jsoncpp_lib)
 
 set_target_properties(MorpionSolitaire GameTests GraphGameTests PyMorpionSolitaire PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
