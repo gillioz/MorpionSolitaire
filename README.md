@@ -10,13 +10,13 @@ My goal is to develop a deep learning model to explore even more efficiently the
 Implementation
 --------------
 
-This repository contains both an original implementation of the game in Python, and a more recent implementation in C# (.NET). The latter is not only much faster, it contains a playable version of the game with some cool features.
+This repository contains several implementations of the game. The Python implementation is the oldest, but also the slowest. A more recent implementation in C++ is much faster and can also be loaded as a Python package. Another implementation in C# (.NET) contains a playable version of the game with some cool features.
 
-### Python
+### C++
 
-The source code is in the folder `python`. The main library is `MorpionSolitaire.py`. The human-readable content is in the Jupyter notebooks:
-- `Documentation.ipynb`: package documentation, with examples
-- `Random_Exploration.ipynb`: notebook performing random exploration of the game outputs
+The C++ implementation of the game is in the folder `cpp`. The main output is the `PyMorpionSolitaire` python module. There are two Jupyter notebooks in this folder:
+- `PyMorpionSolitaire.ipynb` contains examples showing how the module works,
+- `Statistics.ipynb` explores the outcome of Monte-Carlo simulations of the game, both using a naive approach and the more advanced [Nested Monte-Carlo search method of Tristan Cazenave](https://www.ijcai.org/Proceedings/09/Papers/083.pdf).
 
 ### .NET
 
@@ -25,6 +25,12 @@ The C# implementation of the game is in the folder `dotnet`. There are several p
 - `MorpionSolitaireGraph` is an extension that contains several useful features, such as keeping track of possible moves at every stage of the game.
 - `MorpionSolitaireWeb` implements a playable version of the game as a web application.
 - `MorpionSolitaireCLI` is a command-line interface for performing exploration tasks, such as playing a large number of games randomly and extracting some statistics.
+
+### Python
+
+The source code is in the folder `python`. The main library is `MorpionSolitaire.py`. The human-readable content is in the Jupyter notebooks:
+- `Documentation.ipynb`: package documentation, with examples
+- `Random_Exploration.ipynb`: notebook performing random exploration of the game outputs
 
 
 Alternative rules
