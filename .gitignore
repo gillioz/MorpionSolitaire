@@ -1,4 +1,6 @@
-**/.idea/
+**/.idea/**
+
+literature
 
 # Python
 **/__pycache__/
@@ -13,3 +15,10 @@ dotnet/data/**/*.json
 
 # Jupyter notebooks
 **/.ipynb_checkpoints
+
+# C++
+cpp/.idea/
+cpp/bin
+cpp/cmake-build-debug
+
+
