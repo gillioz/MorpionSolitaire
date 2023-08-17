@@ -15,8 +15,10 @@ private:
 
     void buildGraph();
     void addNode(const Move<length, disjoint>& move);
-    vector<Move<length, disjoint>> getSequenceOfMoves(int score = 0);
+    vector<Move<length, disjoint>> getSequenceOfMoves(int score = 0) const;
     void playNestedMC(int level, vector<Move<length, disjoint>> & bestBranch);
+    void playFastNestedMC(int level, bool checkMoveOrdering);
+    void playFastNestedMC(int level, bool checkMoveOrdering, vector<Move<length, disjoint>> & bestBranch);
     static int randomInt(int max, int min = 0);
 
 public:
@@ -34,12 +36,14 @@ public:
     void playAtRandom(int n);
     void playAtRandom();
     void playNestedMC(int level);
+    void playFastNestedMC(int level);
     void undo() override;
     void undo(int steps) override;
     void restart() override;
     void print() const override;
     void revertToScore(int score);
     void revertToRandomScore();
+//    vector<vector<Move<length, disjoint>>> findOrderedSequencesOfMoves(int level);
 
     static GraphGame<length, disjoint> importJSON(const string& json);
     static vector<int> repeatPlayAtRandom(int n, char type = 'c');

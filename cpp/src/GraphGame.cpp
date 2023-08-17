@@ -230,7 +230,7 @@ vector<int> GraphGame<length, disjoint>::repeatPlayAtRandom(int n, char type)
 }
 
 template <size_t length, bool disjoint>
-vector<Move<length, disjoint>> GraphGame<length, disjoint>::getSequenceOfMoves(int score)
+vector<Move<length, disjoint>> GraphGame<length, disjoint>::getSequenceOfMoves(int score) const
 {
     vector<Move<length, disjoint>> result;
     for (int i = (int)nodes.size() - 1; i > score; i--)
@@ -273,6 +273,96 @@ void GraphGame<length, disjoint>::playNestedMC(int level)
     vector<Move<length, disjoint>> bestBranch;
     playNestedMC(level, bestBranch);
 }
+
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::playFastNestedMC(int level, bool checkMoveOrdering, vector<Move<length, disjoint>> & bestBranch)
+{
+    if (level == 0)
+        playAtRandom();
+    else
+    {
+        if (nodes.back().branches.empty())
+            return;
+        int currentScore = getScore();
+        int bestScore = currentScore + (int)bestBranch.size();
+        const vector<Move<length, disjoint>> branches = nodes.back().branches;
+        const optional<Move<length, disjoint>> lastMove = nodes.back().root;
+        for (const Move<length, disjoint>& move: branches)
+            // when 'checkMoveOrdering' is active, skip moves that commute with the last move and do not obey canonical ordering
+            if (!checkMoveOrdering
+                || std::find(move.existingDots.begin(), move.existingDots.end(), lastMove->dot) != move.existingDots.end()
+                || move.line.pt1 < lastMove->line.pt1
+                || (move.line.pt1 == lastMove->line.pt1 && move.line.pt2 < lastMove->line.pt2))
+            {
+                play(move);
+                playFastNestedMC(level - 1, true);
+                int score = getScore();
+                if (score > bestScore){
+                    bestScore = score;
+                    bestBranch = getSequenceOfMoves(currentScore);
+                }
+                revertToScore(currentScore);
+            }
+        if (bestBranch.empty())
+            return;
+        play(bestBranch.back());
+        bestBranch.pop_back();
+        playFastNestedMC(level, false, bestBranch);
+    }
+}
+
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::playFastNestedMC(int level, bool checkMoveOrdering)
+{
+    vector<Move<length, disjoint>> bestBranch;
+    playFastNestedMC(level, checkMoveOrdering, bestBranch);
+}
+
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::playFastNestedMC(int level)
+{
+    vector<Move<length, disjoint>> bestBranch;
+    playFastNestedMC(level, false, bestBranch);
+}
+
+//template <size_t length, bool disjoint>
+//vector<vector<Move<length, disjoint>>> GraphGame<length, disjoint>::findOrderedSequencesOfMoves(int level)
+//{
+//    vector<vector<Move<length, disjoint>>> result;
+//
+//    const vector<Move<length, disjoint>> branches = nodes.back().branches;
+//    for (const Move<length, disjoint>& branch: branches)
+//    {
+//        if (level < 2)
+//        {
+//            vector<Move<length, disjoint>> sequence = {branch};
+//            result.push_back(sequence);
+//        }
+//        else
+//        {
+//            play(branch);
+//            vector<vector<Move<length, disjoint>>> previousSequences = findOrderedSequencesOfMoves(level - 1);
+//            undo();
+//
+//            for (vector<Move<length, disjoint>> sequence: previousSequences)
+//            {
+//                // check whether the last two moves of the sequence commute and are not ordered canonically
+//                const Move<length, disjoint> & nextMove = sequence.back();
+//                const array<Point, length> & existingDots = nextMove.existingDots;
+//                if (std::find(existingDots.begin(), existingDots.end(), branch.dot) != existingDots.end()
+//                    || nextMove.line.pt1 < branch.line.pt1
+//                    || (nextMove.line.pt1 == branch.line.pt1 && nextMove.line.pt2 < branch.line.pt2))
+//                {
+//                    // if this is not the case, then add them to the list of ordered sequences
+//                    sequence.push_back(branch);
+//                    result.push_back(sequence);
+//                }
+//            }
+//        }
+//    }
+//
+//    return result;
+//}
 
 template <size_t length, bool disjoint>
 GraphGame<length, disjoint> GraphGame<length, disjoint>::importJSON(const string& json)

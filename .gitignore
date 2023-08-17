@@ -20,5 +20,6 @@ dotnet/data/**/*.json
 cpp/.idea/
 cpp/bin
 cpp/cmake-build-debug
+cpp/data/games
 
 

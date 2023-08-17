@@ -14,6 +14,13 @@ int main()
     GraphGame<4, false> game;
     cout << "ok" << endl;
 
+//    cout << "Number of sequences at level 1: " << game.findUniqueSequencesOfMoves(1).size() << endl;
+//    cout << "Number of sequences at level 2: " << game.findUniqueSequencesOfMoves(2).size() << endl;
+//    cout << "Number of sequences at level 3: " << game.findUniqueSequencesOfMoves(3).size() << endl;
+//    cout << "Number of sequences at level 4: " << game.findUniqueSequencesOfMoves(4).size() << endl;
+//    cout << "Number of sequences at level 5: " << game.findUniqueSequencesOfMoves(5).size() << endl;
+//    cout << "Number of sequences at level 6: " << game.findUniqueSequencesOfMoves(6).size() << endl;
+
     cout << "Counting possible moves...";
     assert (game.getNumberOfMoves() == 28);
     assert (game.tryPlay({Coordinates(30, 36).toPoint(), Coordinates(34, 36).toPoint()}));
@@ -82,7 +89,7 @@ int main()
 
     cout << "Playing using the nested Monte-Carlo algorithm at level 2...";
     game.restart();
-    game.playNestedMC(2);
+    game.playFastNestedMC(2);
     assert (game.getScore() >= 20);
     cout << "ok" << endl;
 
