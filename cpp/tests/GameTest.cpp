@@ -6,7 +6,8 @@
 
 using namespace std;
 
-int main(){
+int main()
+{
     cout << "Running Morpion Solitaire tests" << endl;
 
     cout << "Creating a game...";
