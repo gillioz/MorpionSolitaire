@@ -9,12 +9,12 @@ GridDTO::GridDTO(const Grid &grid)
     : length(grid.length), disjoint(grid.disjoint)
 {
     for (Point pt: grid.initialDots)
-        initialDots.push_back({getX(pt), getY(pt)});
+        initialDots.push_back({getX(pt) / 3, getY(pt) / 3});
 
     for (const GridMove& move: grid.moves)
-        moves.push_back({getX(move.line.pt1), getY(move.line.pt1),
-                         getX(move.line.pt2), getY(move.line.pt2),
-                         getX(move.dot), getY(move.dot)});
+        moves.push_back({getX(move.line.pt1) / 3, getY(move.line.pt1) / 3,
+                         getX(move.line.pt2) / 3, getY(move.line.pt2) / 3,
+                         getX(move.dot) / 3, getY(move.dot) / 3});
 }
 
 GridDTO::GridDTO(const string &json)
@@ -52,11 +52,13 @@ Grid GridDTO::toGrid() const
 {
     vector<Point> gridInitialDots;
     for (array<int, 2> pt: initialDots)
-        gridInitialDots.emplace_back(makePoint(pt[0], pt[1]));
+        gridInitialDots.emplace_back(makePoint(3 * pt[0] + 1, 3 * pt[1] + 1));
 
     vector<GridMove> gridMoves;
     for (array<int, 6> move: moves)
-        gridMoves.emplace_back(makePoint(move[4], move[5]), Line(makePoint(move[0], move[1]), makePoint(move[2], move[3])));
+        gridMoves.emplace_back(makePoint(3 * move[4] + 1, 3 * move[5] + 1),
+                               Line(makePoint(3 * move[0] + 1, 3 * move[1] + 1),
+                                    makePoint(3 * move[2] + 1, 3 * move[3] + 1)));
 
     return {length, disjoint, gridInitialDots, gridMoves};
 }
