@@ -21,7 +21,6 @@ cpp/.idea/
 cpp/bin
 cpp/cmake-build-debug
 cpp/data/temp
-cpp/data/games
 
 deeplearning/data
 
