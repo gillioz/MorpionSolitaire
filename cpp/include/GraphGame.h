@@ -10,7 +10,7 @@ using std::string, std::vector;
 
 template <size_t length, bool disjoint>
 class GraphGame : public Game<length, disjoint> {
-private:
+protected:
     vector<Node<length, disjoint>> nodes;
 
     void buildGraph();

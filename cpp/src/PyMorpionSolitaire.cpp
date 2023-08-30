@@ -72,6 +72,25 @@ public:
         return py::array_t<bool>({IMAGESIZE, IMAGESIZE}, Game<length, disjoint>::image.value);
     }
 
+    py::array_t<bool> getMoveImages() const
+    {
+        bool currentImage[IMAGESIZE * IMAGESIZE];
+        int imageSize = sizeof(currentImage);
+        std::copy(Game<length, disjoint>::image.value, Game<length, disjoint>::image.value + imageSize, currentImage);
+
+        const vector<Move<length, disjoint>> & moves = GraphGame<length, disjoint>::nodes.back().branches;
+        int n = moves.size();
+        bool moveImages[n * IMAGESIZE * IMAGESIZE];
+        for (int i = 0; i < n; i++)
+        {
+            std::copy(currentImage, currentImage + imageSize, moveImages + i * imageSize);
+            for (auto pt: moves[i])
+                moveImages[i * imageSize + pt] = true;
+        }
+
+        return py::array_t<bool>({n, IMAGESIZE, IMAGESIZE}, moveImages);
+    }
+
     static PyGraphGame<length, disjoint> load(const string& filename)
     {
         ostringstream json;
@@ -106,6 +125,7 @@ void declareGame(py::module& m, const string& name)
             .def("exportJSON", &PyGraphGame<length, disjoint>::exportJSON)
             .def("save", &PyGraphGame<length, disjoint>::save)
             .def("image", &PyGraphGame<length, disjoint>::getImage)
+            .def("getMoveImages", &PyGraphGame<length, disjoint>::getMoveImages)
             .def_static("load", &PyGraphGame<length, disjoint>::load);
 }
 
