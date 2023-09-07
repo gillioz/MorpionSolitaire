@@ -27,6 +27,12 @@ int main()
     assert (game.getNumberOfMoves() == 26);
     cout << "ok" << endl;
 
+    cout << "Systematic exploration...";
+    assert (game.exploreDepth(1) == 1);
+    assert (game.exploreDepth(10) == 10);
+    assert (game.getScore() == 1);
+    cout << "ok" << endl;
+
     cout << "Trying to add a bunch of illegal segments...";
     assert (!game.tryPlay({Coordinates(30, 30).toPoint(), Coordinates(30, 30).toPoint()}));
     assert (!game.tryPlay({Coordinates(30, 30).toPoint(), Coordinates(30, 34).toPoint()}));

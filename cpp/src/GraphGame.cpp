@@ -230,6 +230,31 @@ vector<int> GraphGame<length, disjoint>::repeatPlayAtRandom(int n, char type)
 }
 
 template <size_t length, bool disjoint>
+int GraphGame<length, disjoint>::exploreDepth(int cutoff)
+{
+    int n = getNumberOfMoves();
+    if (n == 0 || cutoff == 0)
+        return 0;
+    if (cutoff == 1)
+        return 1;
+
+    int maxDepth = 0;
+    for (int i = 0; i < n; i++)
+    {
+        play(i);
+        int measuredDepth = exploreDepth(cutoff - 1) + 1;
+        undo();
+
+        if (measuredDepth == cutoff)
+            return cutoff;
+        if (measuredDepth > maxDepth)
+            maxDepth = measuredDepth;
+    }
+
+    return maxDepth;
+}
+
+template <size_t length, bool disjoint>
 vector<Move<length, disjoint>> GraphGame<length, disjoint>::getSequenceOfMoves(int score) const
 {
     vector<Move<length, disjoint>> result;

@@ -43,6 +43,7 @@ public:
     void print() const override;
     void revertToScore(int score);
     void revertToRandomScore();
+    int exploreDepth(int cutoff);
 //    vector<vector<Move<length, disjoint>>> findOrderedSequencesOfMoves(int level);
 
     static GraphGame<length, disjoint> importJSON(const string& json);
