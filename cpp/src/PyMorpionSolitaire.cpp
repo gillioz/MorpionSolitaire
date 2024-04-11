@@ -16,7 +16,7 @@ class PyGraphGame : public GraphGame<length, disjoint>
 public:
     using GraphGame<length, disjoint>::GraphGame; // inherit constructor
 
-    void print() const override
+    void printMove(int highlightedMove) const
     {
         GridFootprint footprint(GraphGame<length, disjoint>::grid);
         footprint.pad(3);
@@ -51,11 +51,29 @@ public:
                 << ", color='k', marker='o', markersize=4)" << endl;
         }
 
+        if (highlightedMove >= 0
+            && highlightedMove < GraphGame<length, disjoint>::nodes.back().branches.size())
+        {
+            Move<length, disjoint> move = GraphGame<length, disjoint>::nodes.back().branches[highlightedMove];
+            Coordinates p1(move.line.pt1);
+            Coordinates p2(move.line.pt2);
+            printCommand << "plt.plot([" << p1.x() << "," << p2.x() << "], ["
+                         << p1.y() << ", " << p2.y() << "], color='b')" << endl;
+            Coordinates p(move.dot);
+            printCommand << "plt.plot(" << p.x() << "," << p.y()
+                         << ", color='b', marker='o', markersize=4)" << endl;
+        }
+
         printCommand << "plt.title('Score: " << GraphGame<length, disjoint>::getScore()
             << "    Number of possible moves: " << GraphGame<length, disjoint>::getNumberOfMoves() << "')" << endl;
 
         py::object scope = py::module_::import("__main__").attr("__dict__");
         py::exec(printCommand.str(), scope);
+    }
+
+    void print() const override
+    {
+        printMove(-1);
     }
 
     void save(const string& filename) const
@@ -125,6 +143,7 @@ void declareGame(py::module& m, const string& name)
             .def("getScore", &PyGraphGame<length, disjoint>::getScore)
             .def("getNumberOfMoves", &PyGraphGame<length, disjoint>::getNumberOfMoves)
             .def("print", &PyGraphGame<length, disjoint>::print)
+            .def("printMove", &PyGraphGame<length, disjoint>::printMove)
             .def("exportJSON", &PyGraphGame<length, disjoint>::exportJSON)
             .def("save", &PyGraphGame<length, disjoint>::save)
             .def("image", &PyGraphGame<length, disjoint>::getImage)
