@@ -24,6 +24,7 @@ template <size_t length, bool disjoint>
 void GraphGame<length, disjoint>::buildGraph()
 {
     Game<length, disjoint>::image.clear();
+    nodes.clear();
 
     // add initial points
     for (Point dot: Game<length, disjoint>::grid.initialDots)
@@ -186,10 +187,19 @@ void GraphGame<length, disjoint>::undo(int steps)
 }
 
 template <size_t length, bool disjoint>
-void GraphGame<length, disjoint>::restart()
+void GraphGame<length, disjoint>::undoAll()
 {
     undo(getScore());
 }
+
+template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::restart()
+{
+    Game<length, disjoint>::grid.moves.clear();
+    buildGraph();
+}
+
+
 
 template <size_t length, bool disjoint>
 void GraphGame<length, disjoint>::print() const
@@ -211,13 +221,30 @@ void GraphGame<length, disjoint>::revertToRandomScore()
 }
 
 template <size_t length, bool disjoint>
+void GraphGame<length, disjoint>::deleteBranch(int index)
+{
+    Node<length, disjoint> & node = nodes.back();
+    vector<Move<length, disjoint>> branches;
+    int n = node.branches.size();
+    for (int i = 0; i < n; i++)
+        if (i != index)
+            branches.emplace_back(node.branches[i]);
+
+    nodes.pop_back();
+    if (node.root.has_value())
+        nodes.emplace_back(node.root.value(), branches);
+    else
+        nodes.emplace_back(branches);
+}
+
+template <size_t length, bool disjoint>
 vector<int> GraphGame<length, disjoint>::repeatPlayAtRandom(int n, char type)
 {
     vector<int> result(60);
     GraphGame<length, disjoint> gameGraph(type);
     for (int i = 0; i < n; i++)
     {
-        gameGraph.restart();
+        gameGraph.undoAll();
         gameGraph.playAtRandom();
 
         int score = gameGraph.getScore();

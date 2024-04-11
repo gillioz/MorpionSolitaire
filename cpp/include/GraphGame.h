@@ -39,7 +39,9 @@ public:
     void playFastNestedMC(int level);
     void undo() override;
     void undo(int steps) override;
+    void undoAll();
     void restart() override;
+    void deleteBranch(int index);
     void print() const override;
     void revertToScore(int score);
     void revertToRandomScore();

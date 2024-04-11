@@ -56,6 +56,13 @@ int main()
     assert (!game.tryPlay({Coordinates(30, 26).toPoint(), Coordinates(34, 30).toPoint()}));
     cout << "ok" << endl;
 
+    cout << "Delete a possible move...";
+    auto currentNumberOfMoves = game.getNumberOfMoves();
+    assert (currentNumberOfMoves > 5);
+    game.deleteBranch(4);
+    assert (game.getNumberOfMoves() == currentNumberOfMoves - 1);
+    cout << "ok" << endl;
+
     cout << "Restart the game...";
     game.restart();
     assert (game.getScore() == 0);
@@ -82,25 +89,25 @@ int main()
     cout << "ok" << endl;
 
     cout << "Restart the game...";
-    game.restart();
+    game.undoAll();
     assert (game.getScore() == 0);
     assert (game.getNumberOfMoves() == 28);
     cout << "ok" << endl;
 
     cout << "Playing using the nested Monte-Carlo algorithm at level 1...";
-    game.restart();
+    game.undoAll();
     game.playNestedMC(1);
     assert (game.getScore() >= 20);
     cout << "ok" << endl;
 
     cout << "Playing using the nested Monte-Carlo algorithm at level 2...";
-    game.restart();
+    game.undoAll();
     game.playFastNestedMC(2);
     assert (game.getScore() >= 20);
     cout << "ok" << endl;
 
     cout << "Restart the game...";
-    game.restart();
+    game.undoAll();
     assert (game.getScore() == 0);
     assert (game.getNumberOfMoves() == 28);
     cout << "ok" << endl;
