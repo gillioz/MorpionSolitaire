@@ -20,6 +20,10 @@ dotnet/data/**/*.json
 cpp/.idea/
 cpp/bin
 cpp/cmake-build-debug
+cpp/*.cmake
+cpp/CMakeCache.txt
+cpp/CMakeFiles
+cpp/Makefile
 cpp/data/temp
 
 deeplearning/data*

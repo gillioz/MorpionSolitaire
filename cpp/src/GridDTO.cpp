@@ -1,6 +1,6 @@
 #include "../include/GridDTO.h"
 #include "../include/Move.h"
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 
 const string GridDTO::TITLE = "Morpion Solitaire";
 const string GridDTO::VERSION = "1.0";

@@ -4,6 +4,8 @@ project(CppMorpionSolitaire)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O3 -fPIC")
 
+set(pybind11_DIR ${CONDA_PREFIX}/share/cmake/pybind11)
+set(jsoncpp_DIR ${CONDA_PREFIX}/lib/cmake/jsoncpp)
 find_package(pybind11 REQUIRED)
 find_package(jsoncpp REQUIRED)
 
@@ -45,11 +47,3 @@ set_target_properties(MorpionSolitaire GameTests GraphGameTests PyMorpionSolitai
         ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-#################################################################################################
-###
-### IMPORTANT: the path to the PyBind11 and Python libraries must be added as CMAKE options,
-###            for instance as follows:
-###    -Dpybind11_DIR=/home/marc/anaconda3/envs/MorpionSolitaire/share/cmake/pybind11
-###    -DPYTHON_EXECUTABLE=/home/marc/anaconda3/envs/MorpionSolitaire/bin/python3
-###
-#################################################################################################
