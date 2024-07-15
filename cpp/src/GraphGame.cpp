@@ -217,7 +217,7 @@ void GraphGame<length, disjoint>::revertToScore(int score)
 template <size_t length, bool disjoint>
 void GraphGame<length, disjoint>::revertToRandomScore()
 {
-    revertToScore(randomInt(getScore() - 2));
+    revertToScore(randomInt(getScore() - 1));
 }
 
 template <size_t length, bool disjoint>
@@ -279,6 +279,45 @@ int GraphGame<length, disjoint>::exploreDepth(int cutoff)
     }
 
     return maxDepth;
+}
+
+template <size_t length, bool disjoint>
+int GraphGame<length, disjoint>::estimateDepth(int maxVolume, int sampleSize)
+{
+    int n = getNumberOfMoves();
+    if (n == 0)
+        return 0;
+
+    // systematic exploration
+    int remainingVolume = maxVolume / n;
+    if (remainingVolume == 0)
+        return INFINITEDEPTH;
+    int maxDepth = 0;
+    for (int i = 0; i < n; i++)
+    {
+        play(i);
+        int measuredDepth = estimateDepth(remainingVolume, -1) + 1;
+        undo();
+
+        if (measuredDepth > maxDepth)
+            maxDepth = measuredDepth;
+        if (measuredDepth == INFINITEDEPTH)
+            break;
+    }
+    if (maxDepth < INFINITEDEPTH || sampleSize < 0)
+        return maxDepth;
+
+    // Monte-Carlo exploration
+    int baseScore = getScore();
+    int maxScore = baseScore;
+    for (int i =0; i < sampleSize; i++)
+    {
+        playAtRandom();
+        if (getScore() > maxScore)
+            maxScore = getScore();
+        revertToScore(baseScore);
+    }
+    return maxScore - baseScore;
 }
 
 template <size_t length, bool disjoint>

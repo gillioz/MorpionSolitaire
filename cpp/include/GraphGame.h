@@ -8,6 +8,8 @@
 
 using std::string, std::vector;
 
+const int INFINITEDEPTH = 10000;
+
 template <size_t length, bool disjoint>
 class GraphGame : public Game<length, disjoint> {
 protected:
@@ -46,6 +48,7 @@ public:
     void revertToScore(int score);
     void revertToRandomScore();
     int exploreDepth(int cutoff);
+    int estimateDepth(int maxVolume = 1000, int sampleSize = 100);
 //    vector<vector<Move<length, disjoint>>> findOrderedSequencesOfMoves(int level);
 
     static GraphGame<length, disjoint> importJSON(const string& json);

@@ -19,7 +19,7 @@ dotnet/data/**/*.json
 # C++
 cpp/.idea/
 cpp/bin
-cpp/cmake-build-debug
+cpp/cmake-build-default
 cpp/*.cmake
 cpp/CMakeCache.txt
 cpp/CMakeFiles

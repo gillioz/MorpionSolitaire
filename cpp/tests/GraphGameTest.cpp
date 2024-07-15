@@ -112,6 +112,18 @@ int main()
     assert (game.getNumberOfMoves() == 28);
     cout << "ok" << endl;
 
+    cout << "Estimate the depth of a game...";
+    assert (game.estimateDepth() >= 20);
+    assert (game.getScore() == 0);
+    assert (game.getNumberOfMoves() == 28);
+    cout << "ok" << endl;
+
+    cout << "Estimate the depth of a game close to its end...";
+    game.playAtRandom();
+    game.revertToScore(game.getScore() - 5);
+    assert (game.estimateDepth() >= 5);
+    cout << "ok" << endl;
+
     cout << "Create empty game...";
     GraphGame<4, false> emptyGame('e');
     assert (emptyGame.getScore() == 0);
@@ -124,5 +136,18 @@ int main()
     auto series = GraphGame<4, false>::repeatPlayAtRandom(nGames);
     auto timeAfter = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> timeInterval = timeAfter - timeBefore;
+    cout << (int)((double)nGames / timeInterval.count() * 1000.0) << endl;
+
+    cout << "Number of depth estimations per second: ";
+    nGames = 1000;
+    timeBefore = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < nGames; i++)
+    {
+        game.playAtRandom();
+        game.revertToRandomScore();
+        game.estimateDepth();
+    }
+    timeAfter = std::chrono::high_resolution_clock::now();
+    timeInterval = timeAfter - timeBefore;
     cout << (int)((double)nGames / timeInterval.count() * 1000.0) << endl;
 }

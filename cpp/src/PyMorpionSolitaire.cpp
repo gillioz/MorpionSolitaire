@@ -120,6 +120,11 @@ public:
         GridDTO dto(json.str());
         return PyGraphGame<length, disjoint>(dto.toGrid());
     }
+
+    int estimateDepthDefault()
+    {
+        return GraphGame<length, disjoint>::estimateDepth(1000, 100);
+    }
 };
 
 template <size_t length, bool disjoint>
@@ -140,6 +145,7 @@ void declareGame(py::module& m, const string& name)
             .def("revertToRandomScore", &PyGraphGame<length, disjoint>::revertToRandomScore)
             .def("deleteMoveByIndex", py::overload_cast<int>(&PyGraphGame<length, disjoint>::deleteBranch))
             .def("exploreDepth", &PyGraphGame<length, disjoint>::exploreDepth)
+            .def("estimateDepth", &PyGraphGame<length, disjoint>::estimateDepthDefault)
             .def("getScore", &PyGraphGame<length, disjoint>::getScore)
             .def("getNumberOfMoves", &PyGraphGame<length, disjoint>::getNumberOfMoves)
             .def("print", &PyGraphGame<length, disjoint>::print)
