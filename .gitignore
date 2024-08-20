@@ -27,5 +27,6 @@ cpp/Makefile
 cpp/data/temp
 
 deeplearning/data*
-deeplearning-diff/data*
+deeplearning-disjoint/data*
+deeplearning-disjoint/runs
 
