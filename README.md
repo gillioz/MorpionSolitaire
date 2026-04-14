@@ -14,9 +14,7 @@ This repository contains several implementations of the game. The Python impleme
 
 ### C++
 
-The C++ implementation of the game is in the folder `cpp`. The main output is the `PyMorpionSolitaire` python module. There are two Jupyter notebooks in this folder:
-- `PyMorpionSolitaire.ipynb` contains examples showing how the module works,
-- `Statistics.ipynb` explores the outcome of Monte-Carlo simulations of the game, both using a naive approach and the more advanced [Nested Monte-Carlo search method of Tristan Cazenave](https://www.ijcai.org/Proceedings/09/Papers/083.pdf).
+The C++ implementation has moved to [a new, separate repository](https://github.com/gillioz/PyMorpionSolitaire).
 
 ### .NET
 
